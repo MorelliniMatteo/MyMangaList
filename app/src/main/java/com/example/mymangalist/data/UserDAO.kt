@@ -1,10 +1,10 @@
-package com.example.MyMangaList.Database
+package com.example.mymangalist.Database
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.MyMangaList.User
+import com.example.mymangalist.User
 
 @Dao
 interface UserDAO {
