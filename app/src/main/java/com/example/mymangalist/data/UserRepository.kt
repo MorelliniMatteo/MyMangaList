@@ -1,7 +1,6 @@
 package com.example.mymangalist.Database
 
 import android.app.Application
-import com.example.mymangalist.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
