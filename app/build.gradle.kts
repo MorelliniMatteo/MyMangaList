@@ -75,4 +75,22 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
+
+    // Jetpack Compose Dependencies
+    implementation("androidx.activity:activity-compose:1.7.2")
+    implementation("androidx.compose.ui:ui:1.6.0")
+    implementation("androidx.compose.material:material:1.6.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.6.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    // Optional if you use navigation or animations
+    implementation("androidx.navigation:navigation-compose:2.6.2")
+    implementation("androidx.compose.animation:animation:1.6.0")
+
+    // Needed for debugging and previews
+    debugImplementation("androidx.compose.ui:ui-tooling:1.6.0")
+
+    implementation("androidx.compose.ui:ui-text:1.6.0")
+
 }
