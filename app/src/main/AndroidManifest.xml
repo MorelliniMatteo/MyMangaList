@@ -24,9 +24,13 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.register.RegistrationScreen" />
+        <activity android:name=".ui.login.LoginScreen" />
+        <activity android:name=".ui.home.HomeActivity" />
+
         <!-- Aggiungi qui la RegisterActivity -->
         <activity
-            android:name=".ui.register.RegisterActivity"
+            android:name=".ui.register.RegisterScreen"
             android:exported="false" /> <!-- Non è necessario esportare questa activity se non deve essere avviata da altre app -->
 
     </application>
