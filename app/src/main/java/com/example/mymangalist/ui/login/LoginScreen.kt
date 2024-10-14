@@ -23,6 +23,18 @@ import com.example.mymangalist.Database.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.ui.home.HomeActivity
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+
+
 class LoginActivity : ComponentActivity() {
     private lateinit var userRepository: UserRepository
 
@@ -79,7 +91,7 @@ fun LoginScreen(userRepository: UserRepositoryInterface) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Login to MyMangaList", style = MaterialTheme.typography.h5)
+        Text(text = "Login to MyMangaList", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 

@@ -21,12 +21,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+
 import com.example.mymangalist.Database.MockUserRepository
 import com.example.mymangalist.Database.UserRepository
 import com.example.mymangalist.Database.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.User
 import com.example.mymangalist.ui.home.HomeActivity
+import androidx.compose.material3.*
 
 class RegistrationActivity : ComponentActivity() {
     private lateinit var userRepository: UserRepository
@@ -102,7 +104,7 @@ fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Welcome to MyMangaList", style = MaterialTheme.typography.h5)
+        Text(text = "Login to MyMangaList", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 

@@ -43,7 +43,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.6.0" // Ensure this matches your Compose version
+        kotlinCompilerExtensionVersion = "1.6.0" // Usa la versione che corrisponde al tuo progetto
     }
 
     packaging {
@@ -54,11 +54,13 @@ android {
 }
 
 dependencies {
-    val roomVersion = "2.6.2" // Check for latest stable version
-    val composeVersion = "1.6.1" // Check for latest stable version
+    implementation("androidx.room:room-common-jvm:2.7.0-alpha09")
+    val roomVersion = "2.6.2" // Ultima versione stabile
+    val composeVersion = "1.6.1" // Ultima versione stabile di Compose
     val lifecycleVersion = "2.6.2"
     val navigationVersion = "2.6.3"
 
+    // Core e AppCompat
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
 
@@ -72,7 +74,11 @@ dependencies {
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.ui:ui-graphics:$composeVersion")
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+
+    // Material Design 3
     implementation("androidx.compose.material3:material3")
+
+    // Activity Compose
     implementation("androidx.activity:activity-compose:1.9.1")
 
     // Lifecycle dependencies
