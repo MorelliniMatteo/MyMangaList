@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.android") version "1.9.10" // Versione Kotlin aggiornata
+    id("com.google.devtools.ksp") // KSP per Room
 }
 
 android {
@@ -14,7 +14,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -43,7 +42,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.6.0" // Usa la versione che corrisponde al tuo progetto
+        kotlinCompilerExtensionVersion = "1.5.3" // Assicurati che la versione del Compose Compiler sia compatibile con Kotlin 1.9.10
     }
 
     packaging {
@@ -53,16 +52,22 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.room:room-runtime:2.6.1") // Forziamo la versione di Room
+        force("androidx.compose.ui:ui:1.7.4") // Forziamo la versione di Compose
+    }
+}
+
 dependencies {
-    implementation("androidx.room:room-common-jvm:2.7.0-alpha09")
-    val roomVersion = "2.6.2" // Ultima versione stabile
-    val composeVersion = "1.6.1" // Ultima versione stabile di Compose
-    val lifecycleVersion = "2.6.2"
-    val navigationVersion = "2.6.3"
+    val roomVersion = "2.6.1" // Versione aggiornata di Room
+    val composeVersion = "1.7.4" // Versione aggiornata di Jetpack Compose
+    val lifecycleVersion = "2.8.6" // Versione aggiornata di Lifecycle
+    val navigationVersion = "2.8.3" // Versione aggiornata di Navigation
 
     // Core e AppCompat
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     // Room dependencies
     implementation("androidx.room:room-runtime:$roomVersion")
@@ -70,7 +75,7 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
 
     // Jetpack Compose Dependencies
-    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.10.00")) // BOM aggiornato per gestire le dipendenze
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.ui:ui-graphics:$composeVersion")
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
@@ -79,7 +84,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     // Activity Compose
-    implementation("androidx.activity:activity-compose:1.9.1")
+    implementation("androidx.activity:activity-compose:1.9.3")
 
     // Lifecycle dependencies
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
@@ -95,8 +100,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
     debugImplementation("androidx.compose.ui:ui-test-manifest:$composeVersion")
+
+    // Kotlin script runtime
+    implementation(kotlin("script-runtime"))
 }
