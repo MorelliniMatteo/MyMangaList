@@ -1,36 +1,44 @@
 package com.example.mymangalist
 
-import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import com.example.MyMangaList.LoginActivity
-import com.example.MyMangaList.RegistrationActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.mymangalist.data.UserRepository
+import com.example.mymangalist.ui.screens.HomeScreen
+import com.example.mymangalist.ui.screens.LoginScreen
+import com.example.mymangalist.ui.screens.RegistrationScreen
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ottieni le SharedPreferences
-        val sharedPreferences: SharedPreferences = getSharedPreferences("MyMangaListPrefs", MODE_PRIVATE)
-        val isFirstRun = sharedPreferences.getBoolean("isFirstRun", true)
+        // Crea un'istanza di UserRepository qui
+        val userRepository = UserRepository(application)
 
-        // Se è la prima volta che si apre l'app, avvia la RegistrationActivity
-        if (isFirstRun) {
-            // Imposta isFirstRun a false per le prossime aperture
-            sharedPreferences.edit().putBoolean("isFirstRun", false).apply()
-
-            // Avvia la schermata di registrazione
-            val intent = Intent(this, RegistrationActivity::class.java)
-            startActivity(intent)
-        } else {
-            // Avvia la schermata di login se non è la prima volta
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
+        setContent {
+            MyMangaListApp(userRepository)
         }
+    }
+}
 
-        // Termina la MainActivity
-        finish()
+@Composable
+fun MyMangaListApp(userRepository: UserRepository) {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") {
+            LoginScreen(navController = navController, userRepository = userRepository)
+        }
+        composable("registration") {
+            RegistrationScreen(navController = navController, userRepository = userRepository)
+        }
+        composable("home") {
+            HomeScreen(navController = navController)
+        }
     }
 }

@@ -1,15 +1,11 @@
-package com.example.MyMangaList
+package com.example.mymangalist.ui.screens
 
-import android.content.Intent
-import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,32 +14,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
-import com.example.mymangalist.Database.MockUserRepository
-import com.example.mymangalist.Database.UserRepository
-import com.example.mymangalist.Database.UserRepositoryInterface
+import androidx.navigation.NavController
+import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.User
-import com.example.mymangalist.ui.home.HomeActivity
-import androidx.compose.material3.*
-
-class RegistrationActivity : ComponentActivity() {
-    private lateinit var userRepository: UserRepository
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        userRepository = UserRepository(application)  // Inizializza il repository
-        setContent {
-            RegistrationScreen(userRepository)
-        }
-    }
-}
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
-fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il tipo qui
+fun RegistrationScreen(navController: NavController, userRepository: UserRepositoryInterface) {
     val context = LocalContext.current
 
     // State per i campi di input
@@ -64,25 +45,29 @@ fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il 
             return
         }
 
-        userRepository.isUsernameTaken(username, object : UserRepository.Callback<Boolean> {
-            override fun onResult(isTaken: Boolean) {
-                if (isTaken) {
-                    Toast.makeText(context, "Username already taken", Toast.LENGTH_SHORT).show()
-                } else {
-                    userRepository.isEmailTaken(email, object : UserRepository.Callback<Boolean> {
-                        override fun onResult(isEmailTaken: Boolean) {
-                            if (isEmailTaken) {
-                                Toast.makeText(context, "Email already taken", Toast.LENGTH_SHORT).show()
-                            } else {
-                                val newUser = User(username, email, password)
-                                userRepository.registerUser(newUser)
-                                Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
+        userRepository.isUsernameTaken(username, object : UserRepositoryInterface.Callback<Boolean> {
+            override fun onResult(result: Boolean) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    if (result) {
+                        Toast.makeText(context, "Username already taken", Toast.LENGTH_SHORT).show()
+                    } else {
+                        userRepository.isEmailTaken(email, object : UserRepositoryInterface.Callback<Boolean> {
+                            override fun onResult(result: Boolean) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    if (result) {
+                                        Toast.makeText(context, "Email already taken", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        val newUser = User(username, email, password)
+                                        userRepository.registerUser(newUser)
+                                        Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
 
-                                val intent = Intent(context, HomeActivity::class.java)
-                                context.startActivity(intent)
+                                        // Naviga alla schermata home
+                                        navController.navigate("home")
+                                    }
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
             }
         })
@@ -104,7 +89,7 @@ fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Login to MyMangaList", style = MaterialTheme.typography.headlineSmall)
+        Text(text = "Register to MyMangaList", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -151,7 +136,7 @@ fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il 
             onClick = { registerUser() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("REGISTRATI")
+            Text("REGISTER")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -161,10 +146,8 @@ fun RegistrationScreen(userRepository: UserRepositoryInterface) {  // Cambia il 
             color = Color.Blue,
             modifier = Modifier
                 .clickable {
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
+                    navController.navigate("login") // Naviga alla schermata di login
                 }
         )
     }
 }
-

@@ -1,12 +1,14 @@
-package com.example.mymangalist.Database
+package com.example.mymangalist.data
 
 import android.app.Application
+import com.example.mymangalist.Database.UserDAO
+import com.example.mymangalist.Database.UserDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.mymangalist.User
 
-class UserRepository(application: Application) : UserRepositoryInterface {  // Implementa l'interfaccia
+class UserRepository(application: Application) : UserRepositoryInterface {
     private val userDAO: UserDAO
 
     init {
@@ -20,35 +22,31 @@ class UserRepository(application: Application) : UserRepositoryInterface {  // I
         }
     }
 
-    override fun isUsernameTaken(username: String, callback: UserRepository.Callback<Boolean>) {
+    override fun isUsernameTaken(username: String, callback: UserRepositoryInterface.Callback<Boolean>) {
         CoroutineScope(Dispatchers.IO).launch {
             val result = userDAO.findByUsername(username) != null
             callback.onResult(result)
         }
     }
 
-    override fun isEmailTaken(email: String, callback: UserRepository.Callback<Boolean>) {
+    override fun isEmailTaken(email: String, callback: UserRepositoryInterface.Callback<Boolean>) {
         CoroutineScope(Dispatchers.IO).launch {
             val result = userDAO.findByEmail(email) != null
             callback.onResult(result)
         }
     }
 
-    override fun loginUser(username: String, password: String, callback: UserRepository.Callback<User?>) {
+    override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<User?>) {
         CoroutineScope(Dispatchers.IO).launch {
             val user: User? = userDAO.login(username, password)
             callback.onResult(user)
         }
     }
 
-    override fun getUserByUsername(username: String, callback: UserRepository.Callback<User?>) {
+    override fun getUserByUsername(username: String, callback: UserRepositoryInterface.Callback<User?>) {
         CoroutineScope(Dispatchers.IO).launch {
             val user: User? = userDAO.getUserByUsername(username)
             callback.onResult(user)
         }
-    }
-
-    interface Callback<T> {
-        fun onResult(result: T)
     }
 }

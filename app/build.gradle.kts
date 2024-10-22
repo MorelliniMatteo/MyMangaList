@@ -60,6 +60,7 @@ configurations.all {
 }
 
 dependencies {
+    implementation("org.chromium.net:cronet-embedded:119.6045.31")
     val roomVersion = "2.6.1" // Versione aggiornata di Room
     val composeVersion = "1.7.4" // Versione aggiornata di Jetpack Compose
     val lifecycleVersion = "2.8.6" // Versione aggiornata di Lifecycle

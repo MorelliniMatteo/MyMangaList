@@ -13,7 +13,7 @@
         android:theme="@style/Theme.MyMangaList"
         tools:targetApi="31">
 
-        <!-- MainActivity che avvia l'app -->
+        <!-- Dichiarazione della MainActivity, che gestisce la navigazione interna -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,8 +25,5 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.home.HomeActivity" />
-
     </application>
-
 </manifest>

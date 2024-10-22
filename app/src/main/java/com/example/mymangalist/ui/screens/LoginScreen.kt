@@ -1,15 +1,11 @@
-package com.example.MyMangaList
+package com.example.mymangalist.ui.screens
 
 import android.content.Intent
-import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,37 +14,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.mymangalist.Database.UserRepository
-import com.example.mymangalist.Database.UserRepositoryInterface
+import androidx.navigation.NavController
+import com.example.mymangalist.data.UserRepositoryInterface
+
 import com.example.mymangalist.R
+import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.ui.home.HomeActivity
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-
-
-class LoginActivity : ComponentActivity() {
-    private lateinit var userRepository: UserRepository
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        userRepository = UserRepository(application)  // Inizializza il repository
-        setContent {
-            LoginScreen(userRepository)
-        }
-    }
-}
-
 @Composable
-fun LoginScreen(userRepository: UserRepositoryInterface) {
+fun LoginScreen(navController: NavController, userRepository: UserRepositoryInterface) {
     val context = LocalContext.current
 
     // State per i campi di input
@@ -62,17 +36,18 @@ fun LoginScreen(userRepository: UserRepositoryInterface) {
             return
         }
 
-        userRepository.loginUser(username, password, object : UserRepository.Callback<com.example.mymangalist.User?> {
-            override fun onResult(user: com.example.mymangalist.User?) {
-                if (user != null) {
+        userRepository.loginUser(username, password, object : UserRepositoryInterface.Callback<com.example.mymangalist.User?> {
+            override fun onResult(result: com.example.mymangalist.User?) {
+                if (result != null) {
                     Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(context, HomeActivity::class.java)
-                    context.startActivity(intent)
+                    navController.navigate("home") // Usa NavController per navigare
                 } else {
                     Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
                 }
             }
+
         })
+
     }
 
     // Composable per la UI
@@ -129,8 +104,7 @@ fun LoginScreen(userRepository: UserRepositoryInterface) {
             color = Color.Blue,
             modifier = Modifier
                 .clickable {
-                    val intent = Intent(context, RegistrationActivity::class.java)
-                    context.startActivity(intent)
+                    navController.navigate("registration") // Usa NavController per navigare
                 }
         )
     }
