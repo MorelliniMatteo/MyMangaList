@@ -1,6 +1,8 @@
 package com.example.mymangalist.ui.screens
 
+import android.app.Activity
 import android.content.Intent
+import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -20,6 +22,7 @@ import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.ui.home.HomeActivity
+import java.util.logging.Handler
 
 @Composable
 fun LoginScreen(navController: NavController, userRepository: UserRepositoryInterface) {
@@ -38,11 +41,14 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
 
         userRepository.loginUser(username, password, object : UserRepositoryInterface.Callback<com.example.mymangalist.User?> {
             override fun onResult(result: com.example.mymangalist.User?) {
-                if (result != null) {
-                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                    navController.navigate("home") // Usa NavController per navigare
-                } else {
-                    Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show()
+                (context as Activity).runOnUiThread {
+                    if (result != null) {
+                        Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                        navController.navigate("home") // Usa NavController per navigare
+                    } else {
+                        Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
             }
 
