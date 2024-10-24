@@ -108,4 +108,10 @@ dependencies {
 
     // Kotlin script runtime
     implementation(kotlin("script-runtime"))
+
+    // Dependency for Fused Location Provider
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // Dependency for Notifications
+    implementation("androidx.core:core:1.9.0")
 }

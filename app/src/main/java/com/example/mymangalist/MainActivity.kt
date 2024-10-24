@@ -1,5 +1,8 @@
 package com.example.mymangalist
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,8 +23,27 @@ class MainActivity : ComponentActivity() {
         // Crea un'istanza di UserRepository qui
         val userRepository = UserRepository(application)
 
+        // Crea il canale di notifica
+        createNotificationChannel()
+
         setContent {
             MyMangaListApp(userRepository)
+        }
+    }
+
+    // Funzione per creare il canale di notifica
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "welcome_channel"
+            val channelName = "Welcome Notifications"
+            val descriptionText = "Channel for Welcome Notifications"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
     }
 }

@@ -1,6 +1,15 @@
 package com.example.mymangalist.ui.screens
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +24,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.NavController
 import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.R
@@ -32,6 +43,44 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    // Funzione per inviare la notifica di benvenuto con controllo permessi
+    fun sendWelcomeNotification(context: Context) {
+        val channelId = "welcome_channel"
+
+        // Verifica se l'app ha il permesso di inviare notifiche
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                // Richiedi il permesso (controlla che il contesto sia una ComponentActivity)
+                if (context is ComponentActivity) {
+                    ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+                }
+            } else {
+                // Invia la notifica
+                val builder = NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle("Welcome to MyMangaList!")
+                    .setContentText("Your account has been successfully created, $username.")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+                with(NotificationManagerCompat.from(context)) {
+                    notify(1, builder.build())
+                }
+            }
+        } else {
+            // Per versioni precedenti ad Android 13, non è necessario richiedere il permesso
+            val builder = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Welcome to MyMangaList!")
+                .setContentText("Your account has been successfully created, $username.")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+            with(NotificationManagerCompat.from(context)) {
+                notify(1, builder.build())
+            }
+        }
+    }
 
     // Funzione per gestire la registrazione
     fun registerUser() {
@@ -60,6 +109,9 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
                                         val newUser = User(username, email, password)
                                         userRepository.registerUser(newUser)
                                         Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
+
+                                        // Invia la notifica di benvenuto
+                                        sendWelcomeNotification(context)
 
                                         // Naviga alla schermata home
                                         navController.navigate("home")

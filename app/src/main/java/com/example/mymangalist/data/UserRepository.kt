@@ -36,10 +36,17 @@ class UserRepository(application: Application) : UserRepositoryInterface {
         }
     }
 
-    override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<User?>) {
+    override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<LoginResult>) {
         CoroutineScope(Dispatchers.IO).launch {
+            // Qui puoi eseguire il login e restituire un LoginResult
             val user: User? = userDAO.login(username, password)
-            callback.onResult(user)
+            if (user != null) {
+                // Login riuscito
+                callback.onResult(LoginResult.Success(user))
+            } else {
+                // Se l'utente non è trovato, puoi restituire un LoginResult specifico
+                callback.onResult(LoginResult.InvalidCredentials)
+            }
         }
     }
 

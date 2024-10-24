@@ -1,6 +1,7 @@
 package com.example.mymangalist
 
 import com.example.mymangalist.data.UserRepositoryInterface
+import com.example.mymangalist.data.LoginResult // Assicurati di importare LoginResult
 
 // Classe MockUserRepository
 class MockUserRepository : UserRepositoryInterface {
@@ -19,8 +20,9 @@ class MockUserRepository : UserRepositoryInterface {
         callback.onResult(false)  // Modifica questo valore per simulare comportamenti diversi
     }
 
-    override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<User?>) {
-        callback.onResult(null) // Simula il login fallito
+    override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<LoginResult>) {
+        // Simula il login fallito
+        callback.onResult(LoginResult.InvalidCredentials) // Simula un login fallito
     }
 
     override fun getUserByUsername(username: String, callback: UserRepositoryInterface.Callback<User?>) {
