@@ -1,5 +1,6 @@
 package com.example.mymangalist
 
+import HomeScreen
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
@@ -11,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mymangalist.data.UserRepository
-import com.example.mymangalist.ui.screens.HomeScreen
+
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
 
