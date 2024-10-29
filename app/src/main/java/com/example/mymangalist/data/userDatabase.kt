@@ -1,16 +1,17 @@
-package com.example.mymangalist.Database
+package com.example.mymangalist.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.mymangalist.User
+import com.example.mymangalist.Manga
 
-// Definizione del database Room
-@Database(entities = [User::class], version = 1, exportSchema = false)
+@Database(entities = [User::class, Manga::class], version = 1, exportSchema = false)
 abstract class UserDatabase : RoomDatabase() {
 
     abstract fun userDAO(): UserDAO
+    abstract fun mangaDAO(): MangaDAO
 
     companion object {
         @Volatile

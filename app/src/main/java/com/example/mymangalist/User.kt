@@ -7,7 +7,8 @@ import androidx.room.Index
 @Entity(
     tableName = "Users",
     primaryKeys = ["username"],
-    indices = [Index(value = ["email"], unique = true)])
+    indices = [Index(value = ["email"], unique = true)]
+)
 data class User(
     val username: String, // PrimaryKey univoca
     val email: String,    // Email univoca

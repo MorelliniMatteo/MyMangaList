@@ -1,4 +1,4 @@
-package com.example.mymangalist.Database
+package com.example.mymangalist.data
 
 import androidx.room.Dao
 import androidx.room.Insert

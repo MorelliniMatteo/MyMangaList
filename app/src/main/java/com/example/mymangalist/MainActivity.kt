@@ -12,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mymangalist.data.UserRepository
-
+import com.example.mymangalist.data.MangaRepository // Importa MangaRepository
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
 
@@ -21,14 +21,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Crea un'istanza di UserRepository qui
+        // Crea un'istanza di UserRepository e MangaRepository
         val userRepository = UserRepository(application)
+        val mangaRepository = MangaRepository(application) // Aggiungi MangaRepository
 
         // Crea il canale di notifica
         createNotificationChannel()
 
         setContent {
-            MyMangaListApp(userRepository)
+            MyMangaListApp(userRepository, mangaRepository) // Passa MangaRepository
         }
     }
 
@@ -50,7 +51,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyMangaListApp(userRepository: UserRepository) {
+fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaRepository) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login") {
@@ -61,7 +62,8 @@ fun MyMangaListApp(userRepository: UserRepository) {
             RegistrationScreen(navController = navController, userRepository = userRepository)
         }
         composable("home") {
-            HomeScreen(navController = navController)
+            HomeScreen(navController = navController, userRepository = userRepository, mangaRepository = mangaRepository) // Passa anche MangaRepository
         }
     }
 }
+
