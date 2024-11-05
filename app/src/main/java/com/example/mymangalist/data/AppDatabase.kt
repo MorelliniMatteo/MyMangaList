@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import com.example.mymangalist.User
 import com.example.mymangalist.Manga
 
-@Database(entities = [User::class, Manga::class], version = 3)
+@Database(entities = [User::class, Manga::class], version = 4)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDAO

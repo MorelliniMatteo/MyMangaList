@@ -30,7 +30,6 @@ import com.example.mymangalist.data.LoginResult
 import com.example.mymangalist.R
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,8 +47,8 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
 
     val scope = rememberCoroutineScope()
 
-    // Funzione per creare il canale di notifica
-    fun createNotificationChannel(context: Context) {
+    // Funzione per creare un canale di notifica
+    fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Login Channel"
             val descriptionText = "Channel for login notifications"
@@ -57,16 +56,16 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             val channel = NotificationChannel("login_channel", name, importance).apply {
                 description = descriptionText
             }
-            // Registra il canale con il sistema
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
 
+    // Crea il canale di notifica se non esiste
+    createNotificationChannel()
+
     // Funzione per inviare la notifica di accesso
-    fun sendLoginNotification(context: Context, username: String, location: Location?) {
-        // Verifica il permesso per inviare notifiche
+    fun sendLoginNotification(username: String, location: Location?) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1003)
             return
@@ -75,17 +74,13 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         val channelId = "login_channel"
         val locationText = location?.let { "from ${it.latitude}, ${it.longitude}" } ?: "location not available"
 
-        // Crea la notifica
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("New Login Detected")
             .setContentText("New login to profile: $username, $locationText.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        // Mostra la notifica
-        with(NotificationManagerCompat.from(context)) {
-            notify(2, builder.build())
-        }
+        NotificationManagerCompat.from(context).notify(2, builder.build())
     }
 
     // Funzione per gestire il login
@@ -98,23 +93,24 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         userRepository.loginUser(username, password, object : UserRepositoryInterface.Callback<LoginResult> {
             override fun onResult(result: LoginResult) {
                 scope.launch {
-                    when (result) {
-                        is LoginResult.Success -> {
-                            withContext(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
+                        when (result) {
+                            is LoginResult.Success -> {
                                 Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                                createNotificationChannel(context) // Crea il canale prima di inviare la notifica
-                                sendLoginNotification(context, username, location)
-                                navController.navigate("home")
+                                sendLoginNotification(username, location)
+                                navController.navigate("home/${username}") {
+                                    popUpTo("login") { inclusive = true } // Rimuovi la schermata di login
+                                }
                             }
-                        }
-                        is LoginResult.InvalidCredentials -> {
-                            loginError = "Invalid username or password"
-                        }
-                        is LoginResult.UserNotFound -> {
-                            loginError = "User not found"
-                        }
-                        is LoginResult.Error -> {
-                            loginError = "An error occurred during login"
+                            is LoginResult.InvalidCredentials -> {
+                                loginError = "Invalid username or password"
+                            }
+                            is LoginResult.UserNotFound -> {
+                                loginError = "User not found"
+                            }
+                            is LoginResult.Failure -> {
+                                loginError = result.errorMessage
+                            }
                         }
                     }
                 }
@@ -124,11 +120,9 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
 
     // Funzione per ottenere la posizione corrente e gestire il login
     fun getLocationAndLogin() {
-        // Verifica i permessi di localizzazione
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            // Richiedi i permessi di localizzazione
             ActivityCompat.requestPermissions(context as Activity,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
                 1002
@@ -136,14 +130,13 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             return
         }
 
-        // Ottieni l'ultima posizione
-        fusedLocationClient.lastLocation.addOnCompleteListener { task: Task<Location> ->
+        fusedLocationClient.lastLocation.addOnCompleteListener { task ->
             location = if (task.isSuccessful && task.result != null) task.result else null
-            loginUser(location) // Chiama loginUser() dopo aver ottenuto la posizione
+            loginUser(location)
         }
     }
 
-    // Composable per la UI
+    // UI Composable
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -180,7 +173,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Mostra gli errori di login, se presenti
         if (loginError.isNotEmpty()) {
             Text(text = loginError, color = Color.Red)
         }
@@ -196,7 +188,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Collegamento alla pagina di registrazione
         Text(
             text = "Don't have an account? Register here",
             color = Color.Blue,

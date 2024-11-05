@@ -101,4 +101,6 @@ dependencies {
     implementation("org.chromium.net:cronet-embedded:119.6045.31")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation(kotlin("script-runtime"))
+
+    implementation("io.coil-kt:coil-compose:2.0.0")
 }

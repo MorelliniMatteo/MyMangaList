@@ -29,4 +29,10 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
         }
     }
 
+    fun getMangaCountByUser(userId: String, callback: UserRepositoryInterface.Callback<Int>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val count = mangaDAO.getCountByUsername(userId)  // Usa userId come parametro
+            callback.onResult(count)
+        }
+    }
 }

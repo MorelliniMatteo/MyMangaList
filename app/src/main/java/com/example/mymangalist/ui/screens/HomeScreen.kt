@@ -1,3 +1,5 @@
+package com.example.mymangalist.ui.screens
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,29 +12,40 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.mymangalist.R
-import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import com.example.mymangalist.data.UserRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    userRepository: UserRepository,      // Aggiungi userRepository come parametro
-    mangaRepository: MangaRepository      // Aggiungi mangaRepository come parametro
+    userRepository: UserRepository,
+    mangaRepository: MangaRepository,
+    username: String
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    val mangaList = listOf("Manga One", "Manga Two", "Manga Three")
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Name Application", fontWeight = FontWeight.Bold)
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "MyMangaList", fontWeight = FontWeight.Bold)
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* Naviga ai preferiti */ }) {
+                    IconButton(onClick = { /* Navigate to favorites */ }) {
                         Icon(painter = painterResource(id = R.drawable.ic_favorite), contentDescription = "Favorites")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Apre il filtro */ }) {
+                    IconButton(onClick = { /* Open filter */ }) {
                         Icon(painter = painterResource(id = R.drawable.ic_filter), contentDescription = "Filter")
                     }
                 },
@@ -41,18 +54,19 @@ fun HomeScreen(
                     titleContentColor = Color.White
                 )
             )
-        },
+        }
+        ,
         bottomBar = {
             BottomAppBar(
                 modifier = Modifier.height(56.dp),
                 content = {
-                    IconButton(onClick = { /* Naviga al profilo */ }, modifier = Modifier.weight(1f)) {
+                    IconButton(onClick = { navController.navigate("profile/$username") }, modifier = Modifier.weight(1f)) {
                         Icon(painter = painterResource(id = R.drawable.ic_profile), contentDescription = "Profile")
                     }
-                    IconButton(onClick = { /* Aggiungi un nuovo manga */ }, modifier = Modifier.weight(1f)) {
+                    IconButton(onClick = { /* Add a new manga */ }, modifier = Modifier.weight(1f)) {
                         Icon(painter = painterResource(id = R.drawable.ic_add), contentDescription = "Add Manga")
                     }
-                    IconButton(onClick = { /* Naviga alle impostazioni */ }, modifier = Modifier.weight(1f)) {
+                    IconButton(onClick = { /* Navigate to settings */ }, modifier = Modifier.weight(1f)) {
                         Icon(painter = painterResource(id = R.drawable.ic_settings), contentDescription = "Settings")
                     }
                 }
@@ -66,8 +80,6 @@ fun HomeScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Barra di ricerca
-                var searchQuery by remember { mutableStateOf("") }
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -79,15 +91,13 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lista degli elementi (Manga)
-                Column(
+                LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Text("Item One", fontSize = 20.sp, modifier = Modifier.padding(8.dp))
-                    Divider()
-                    Text("Item Two", fontSize = 20.sp, modifier = Modifier.padding(8.dp))
-                    Divider()
-                    Text("Item Three", fontSize = 20.sp, modifier = Modifier.padding(8.dp))
+                    items(mangaList) { manga ->
+                        Text(manga, fontSize = 20.sp, modifier = Modifier.padding(8.dp))
+                        Divider()
+                    }
                 }
             }
         }

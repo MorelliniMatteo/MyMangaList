@@ -1,10 +1,11 @@
 package com.example.mymangalist.data
 
 import android.app.Application
+import com.example.mymangalist.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.example.mymangalist.User
+import kotlinx.coroutines.withContext
 
 class UserRepository(application: Application) : UserRepositoryInterface {
     private val userDAO: UserDAO
@@ -22,36 +23,70 @@ class UserRepository(application: Application) : UserRepositoryInterface {
 
     override fun isUsernameTaken(username: String, callback: UserRepositoryInterface.Callback<Boolean>) {
         CoroutineScope(Dispatchers.IO).launch {
-            val result = userDAO.findByUsername(username) != null
-            callback.onResult(result)
+            val result = userDAO.getUserByUsername(username) != null
+            withContext(Dispatchers.Main) {
+                callback.onResult(result)
+            }
         }
     }
 
     override fun isEmailTaken(email: String, callback: UserRepositoryInterface.Callback<Boolean>) {
         CoroutineScope(Dispatchers.IO).launch {
             val result = userDAO.findByEmail(email) != null
-            callback.onResult(result)
+            withContext(Dispatchers.Main) {
+                callback.onResult(result)
+            }
+        }
+    }
+
+    // Assicurati che anche getUserByUsername utilizzi coroutine
+    override fun getUserByUsername(username: String, callback: UserRepositoryInterface.Callback<User?>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val user = userDAO.getUserByUsername(username)
+            withContext(Dispatchers.Main) {
+                callback.onResult(user)
+            }
+        }
+    }
+
+    // Metodo per aggiornare la foto del profilo
+    fun updateProfilePicture(username: String, pictureUri: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            userDAO.updateProfilePicture(username, pictureUri)
+        }
+    }
+
+    // Metodo per aggiornare la posizione
+    fun updateLocation(username: String, location: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            userDAO.updateLocation(username, location)
+        }
+    }
+
+    fun getUser(username: String, callback: UserRepositoryInterface.Callback<User?>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val user = userDAO.getUserByUsername(username) // Supponendo che questa funzione ritorni User?
+            withContext(Dispatchers.Main) {
+                callback.onResult(user)
+            }
         }
     }
 
     override fun loginUser(username: String, password: String, callback: UserRepositoryInterface.Callback<LoginResult>) {
         CoroutineScope(Dispatchers.IO).launch {
-            // Qui puoi eseguire il login e restituire un LoginResult
-            val user: User? = userDAO.login(username, password)
-            if (user != null) {
-                // Login riuscito
-                callback.onResult(LoginResult.Success(user))
-            } else {
-                // Se l'utente non è trovato, puoi restituire un LoginResult specifico
-                callback.onResult(LoginResult.InvalidCredentials)
+            val user = userDAO.login(username, password)
+            withContext(Dispatchers.Main) {
+                if (user != null) {
+                    callback.onResult(LoginResult.Success(user))
+                } else {
+                    // Puoi anche implementare controlli per InvalidCredentials o UserNotFound
+                    callback.onResult(LoginResult.InvalidCredentials) // o LoginResult.UserNotFound
+                }
             }
         }
     }
 
-    override fun getUserByUsername(username: String, callback: UserRepositoryInterface.Callback<User?>) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val user: User? = userDAO.getUserByUsername(username)
-            callback.onResult(user)
-        }
-    }
+
+
 }
+

@@ -17,6 +17,8 @@
         android:theme="@style/Theme.MyMangaList"
         tools:targetApi="31">
 
+
+
         <!-- Dichiarazione della MainActivity, che gestisce la navigazione interna -->
         <activity
             android:name=".MainActivity"

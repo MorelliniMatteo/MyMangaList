@@ -1,6 +1,5 @@
 package com.example.mymangalist
 
-import HomeScreen
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
@@ -8,32 +7,30 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mymangalist.data.UserRepository
-import com.example.mymangalist.data.MangaRepository // Importa MangaRepository
+import com.example.mymangalist.data.MangaRepository
+import com.example.mymangalist.data.UserRepositoryInterface
+import com.example.mymangalist.ui.screens.HomeScreen
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
+import com.example.mymangalist.ui.screens.UserProfileScreen
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Crea un'istanza di UserRepository e MangaRepository
         val userRepository = UserRepository(application)
-        val mangaRepository = MangaRepository(application) // Aggiungi MangaRepository
-
-        // Crea il canale di notifica
+        val mangaRepository = MangaRepository(application)
         createNotificationChannel()
 
         setContent {
-            MyMangaListApp(userRepository, mangaRepository) // Passa MangaRepository
+            MyMangaListApp(userRepository, mangaRepository)
         }
     }
 
-    // Funzione per creare il canale di notifica
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "welcome_channel"
@@ -43,8 +40,7 @@ class MainActivity : ComponentActivity() {
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: NotificationManager =
-                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager: NotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -61,9 +57,24 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
         composable("registration") {
             RegistrationScreen(navController = navController, userRepository = userRepository)
         }
-        composable("home") {
-            HomeScreen(navController = navController, userRepository = userRepository, mangaRepository = mangaRepository) // Passa anche MangaRepository
+        composable("home/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            HomeScreen(
+                navController = navController,
+                userRepository = userRepository,
+                mangaRepository = mangaRepository,
+                username = username
+            )
+        }
+
+        composable("profile/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            UserProfileScreen(
+                navController = navController,
+                userRepository = userRepository,
+                mangaRepository = mangaRepository,
+                username = username
+            )
         }
     }
 }
-

@@ -14,4 +14,7 @@ interface MangaDAO {
 
     @Query("SELECT * FROM mangas WHERE userId = :userId")
     fun getMangasByUser(userId: String): List<Manga>
+
+    @Query("SELECT COUNT(*) FROM mangas WHERE userId = :userId")
+    fun getCountByUsername(userId: String): Int
 }
