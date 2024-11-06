@@ -34,53 +34,64 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import android.location.Geocoder
+import java.util.Locale
+
 @Composable
 fun LoginScreen(navController: NavController, userRepository: UserRepositoryInterface) {
+    // Inizializzazione delle variabili di contesto e localizzazione
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val scope = rememberCoroutineScope()
 
-    // State per i campi di input
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loginError by remember { mutableStateOf("") }
     var location: Location? by remember { mutableStateOf(null) }
 
-    val scope = rememberCoroutineScope()
+    fun createNotificationChannel() { /* Canale di notifica */ }
 
-    // Funzione per creare un canale di notifica
-    fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Login Channel"
-            val descriptionText = "Channel for login notifications"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel("login_channel", name, importance).apply {
-                description = descriptionText
-            }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+    // Funzione per ottenere la città usando Geocoder
+    fun getCityFromLocation(location: Location?): String? {
+        location ?: return null
+        return try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+            addresses?.get(0)?.locality // Ottiene la città dall'indirizzo
+        } catch (e: Exception) {
+            null
         }
     }
 
-    // Crea il canale di notifica se non esiste
-    createNotificationChannel()
-
     // Funzione per inviare la notifica di accesso
     fun sendLoginNotification(username: String, location: Location?) {
+        val city = getCityFromLocation(location)
+        val locationText = if (city != null) {
+            "from $city (${location?.latitude}, ${location?.longitude})"
+        } else {
+            "from ${location?.latitude}, ${location?.longitude}"
+        }
+
+        // Controllo del permesso di invio notifiche
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1003)
             return
         }
 
-        val channelId = "login_channel"
-        val locationText = location?.let { "from ${it.latitude}, ${it.longitude}" } ?: "location not available"
-
-        val builder = NotificationCompat.Builder(context, channelId)
+        val builder = NotificationCompat.Builder(context, "login_channel")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("New Login Detected")
             .setContentText("New login to profile: $username, $locationText.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        NotificationManagerCompat.from(context).notify(2, builder.build())
+        // Blocca la chiamata in un try-catch per gestire possibili SecurityException
+        try {
+            NotificationManagerCompat.from(context).notify(2, builder.build())
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            // Eventualmente, mostra un messaggio di errore all'utente
+            Toast.makeText(context, "Notification permission is required to send login notifications", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // Funzione per gestire il login
