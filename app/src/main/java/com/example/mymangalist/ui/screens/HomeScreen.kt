@@ -16,6 +16,7 @@ import com.example.mymangalist.data.MangaRepository
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.example.mymangalist.data.UserRepository
+import com.example.mymangalist.ui.screens.MyMangaBottomBar  // Importa MyMangaBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,24 +55,8 @@ fun HomeScreen(
                     titleContentColor = Color.White
                 )
             )
-        }
-        ,
-        bottomBar = {
-            BottomAppBar(
-                modifier = Modifier.height(56.dp),
-                content = {
-                    IconButton(onClick = { navController.navigate("profile/$username") }, modifier = Modifier.weight(1f)) {
-                        Icon(painter = painterResource(id = R.drawable.ic_profile), contentDescription = "Profile")
-                    }
-                    IconButton(onClick = { /* Add a new manga */ }, modifier = Modifier.weight(1f)) {
-                        Icon(painter = painterResource(id = R.drawable.ic_add), contentDescription = "Add Manga")
-                    }
-                    IconButton(onClick = { /* Navigate to settings */ }, modifier = Modifier.weight(1f)) {
-                        Icon(painter = painterResource(id = R.drawable.ic_settings), contentDescription = "Settings")
-                    }
-                }
-            )
         },
+        bottomBar = { MyMangaBottomBar(navController = navController, username = username) },  // Usa MyMangaBottomBar
         content = { paddingValues ->
             Column(
                 modifier = Modifier

@@ -20,6 +20,7 @@ import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepositoryInterface
 import kotlinx.coroutines.launch
+import com.example.mymangalist.ui.screens.MyMangaBottomBar  // Importa MyMangaBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +55,20 @@ fun UserProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "MyMangaList", fontWeight = FontWeight.Bold) },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+
+                    ) {
+                        Row (
+                            modifier = Modifier.align(Alignment.Center),  // Centra il contenuto all'interno del Box
+                            horizontalArrangement = Arrangement.Center
+                        ){
+                            Text(text = "MyMangaList", fontWeight = FontWeight.Bold)
+                        }
+
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(painter = painterResource(id = R.drawable.ic_back), contentDescription = "Back")
@@ -66,6 +80,7 @@ fun UserProfileScreen(
                 )
             )
         },
+        bottomBar = { MyMangaBottomBar(navController = navController, username = username) },  // Usa MyMangaBottomBar
         content = { paddingValues ->
             Column(
                 modifier = Modifier
@@ -84,7 +99,7 @@ fun UserProfileScreen(
                     modifier = Modifier
                         .size(100.dp)
                         .clickable {
-                            // Here, you can implement functionality to select a new image
+                            // Implementa la selezione di una nuova immagine
                         }
                 )
 
@@ -103,7 +118,7 @@ fun UserProfileScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            // Update the user's location if permissions are granted
+                            // Aggiorna la posizione dell'utente
                         }
                     },
                     modifier = Modifier.padding(top = 8.dp)
