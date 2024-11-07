@@ -18,6 +18,7 @@ import com.example.mymangalist.ui.screens.HomeScreen
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
 import com.example.mymangalist.ui.screens.UserProfileScreen
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaRepository) {
     val navController = rememberNavController()
+    val context = LocalContext.current  // Otteniamo il context
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -73,7 +75,8 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 navController = navController,
                 userRepository = userRepository,
                 mangaRepository = mangaRepository,
-                username = username
+                username = username,
+                context = context  // passiamo il context a UserProfileScreen
             )
         }
     }
