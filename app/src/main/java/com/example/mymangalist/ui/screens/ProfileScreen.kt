@@ -1,10 +1,15 @@
 package com.example.mymangalist.ui.screens
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.location.Geocoder
+import android.location.Location
 import android.net.Uri
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +25,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.R
@@ -27,8 +34,10 @@ import com.example.mymangalist.User
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepositoryInterface
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import java.io.OutputStream
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +55,18 @@ fun UserProfileScreen(
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            fetchLocation(context, userRepository, username) { newLocation ->
+                location = newLocation // Aggiorna la UI con la nuova posizione
+            }
+        } else {
+            Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -60,7 +81,7 @@ fun UserProfileScreen(
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
-        onResult = { bitmap: Bitmap? ->
+        onResult = { bitmap ->
             bitmap?.let {
                 val savedUri = saveBitmapAsUri(context, it)
                 savedUri?.let { uri ->
@@ -137,10 +158,16 @@ fun UserProfileScreen(
                 Text(text = "Totale Manga Letture: $mangaCount", fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "Posizione: $location", fontSize = 16.sp)
+
                 Button(
                     onClick = {
-                        coroutineScope.launch {
-                            // Aggiorna la posizione qui
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PermissionChecker.PERMISSION_GRANTED) {
+                            fetchLocation(context, userRepository, username) { newLocation ->
+                                location = newLocation // Aggiorna la UI
+                            }
+                        } else {
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                         }
                     },
                     modifier = Modifier.padding(top = 8.dp)
@@ -189,7 +216,33 @@ fun showImageSelectionDialog(
     )
 }
 
-// Funzione per salvare un Bitmap come Uri
+private fun fetchLocation(
+    context: Context,
+    userRepository: UserRepository,
+    username: String,
+    onLocationUpdated: (String) -> Unit
+) {
+    if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        == PackageManager.PERMISSION_GRANTED
+    ) {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                val city = addresses?.firstOrNull()?.locality ?: "Posizione sconosciuta"
+                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
+
+                userRepository.updateLocation(username, newLocation)
+                onLocationUpdated(newLocation) // Aggiorna la UI
+                Toast.makeText(context, "Posizione aggiornata", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
+        }
+    } else {
+        Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
+    }
+}
+
 fun saveBitmapAsUri(context: Context, bitmap: Bitmap): Uri? {
     val contentValues = ContentValues().apply {
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
