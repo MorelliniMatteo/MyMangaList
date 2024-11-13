@@ -155,7 +155,7 @@ fun UserProfileScreen(
                 Text(text = "Username: ${user?.username}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(text = "Email: ${user?.email}", fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Totale Manga Letture: $mangaCount", fontSize = 16.sp)
+                Text(text = "Totale Manga Letti: $mangaCount", fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "Posizione: $location", fontSize = 16.sp)
 

@@ -17,10 +17,10 @@ fun MyMangaBottomBar(navController: NavController, username: String) {
             IconButton(onClick = { navController.navigate("profile/$username") }, modifier = Modifier.weight(1f)) {
                 Icon(painter = painterResource(id = R.drawable.ic_profile), contentDescription = "Profile")
             }
-            IconButton(onClick = { /* Add a new manga */ }, modifier = Modifier.weight(1f)) {
+            IconButton(onClick = { navController.navigate("add_manga/$username") }, modifier = Modifier.weight(1f)) {
                 Icon(painter = painterResource(id = R.drawable.ic_add), contentDescription = "Add Manga")
             }
-            IconButton(onClick = { /* Navigate to settings */ }, modifier = Modifier.weight(1f)) {
+            IconButton(onClick = { navController.navigate("settings") }, modifier = Modifier.weight(1f)) {
                 Icon(painter = painterResource(id = R.drawable.ic_settings), contentDescription = "Settings")
             }
         }

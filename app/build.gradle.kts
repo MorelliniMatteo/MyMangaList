@@ -67,7 +67,11 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
 
     // Data Binding
-    implementation("androidx.databinding:databinding-adapters:8.7.1") // Solo la versione più recente
+    implementation("androidx.databinding:databinding-adapters:8.7.1")
+
+    // Google Maps e Location Services
+    implementation("com.google.android.gms:play-services-maps:19.0.0") // Solo la versione più recente
+    implementation("com.google.android.gms:play-services-location:21.0.1") // Per gestione posizione utente
 
     // Room (persistenza locale)
     val roomVersion = "2.6.1"
@@ -89,6 +93,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
 
+    // Google Maps Compose
+    implementation("com.google.maps.android:maps-compose:2.11.0") // Supporto per Compose
+
+    // Google Places
+    implementation("com.google.android.libraries.places:places:3.1.0") // API per Google Places
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
@@ -99,7 +109,6 @@ dependencies {
 
     // Altri componenti
     implementation("org.chromium.net:cronet-embedded:119.6045.31")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation(kotlin("script-runtime"))
 
     implementation("io.coil-kt:coil-compose:2.0.0")

@@ -7,22 +7,29 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
-import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.ui.screens.HomeScreen
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
 import com.example.mymangalist.ui.screens.UserProfileScreen
-import androidx.compose.ui.platform.LocalContext
+import com.example.mymangalist.ui.AddScreen
+import com.example.mymangalist.ui.screens.MapScreen
+import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inizializzazione della Places API
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "AIzaSyBx0rStCAT7tNnbd3XR6zH4yluzb-uRMXY")
+        }
+
         val userRepository = UserRepository(application)
         val mangaRepository = MangaRepository(application)
         createNotificationChannel()
@@ -41,7 +48,8 @@ class MainActivity : ComponentActivity() {
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: NotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager: NotificationManager =
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -50,7 +58,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaRepository) {
     val navController = rememberNavController()
-    val context = LocalContext.current  // Otteniamo il context
+    val context = LocalContext.current
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -68,7 +76,6 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 username = username
             )
         }
-
         composable("profile/{username}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "unknown"
             UserProfileScreen(
@@ -76,7 +83,24 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 userRepository = userRepository,
                 mangaRepository = mangaRepository,
                 username = username,
-                context = context  // passiamo il context a UserProfileScreen
+                context = context
+            )
+        }
+        composable("add_manga/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            AddScreen(
+                navController = navController,
+                userId = username,
+                mangaRepository = mangaRepository,
+                onMangaAdded = { navController.popBackStack() }
+            )
+        }
+        composable("map") {
+            MapScreen(
+                navController = navController,
+                onLocationSelected = { cityName, latLng ->
+                    // Handle selected location (cityName, latLng)
+                }
             )
         }
     }
