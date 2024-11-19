@@ -1,5 +1,7 @@
 package com.example.mymangalist.ui
 
+import android.app.DatePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -18,6 +20,9 @@ import com.example.mymangalist.ui.screens.MyMangaBottomBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.widget.DatePicker
+import androidx.compose.ui.platform.LocalContext
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,17 +35,34 @@ fun AddScreen(
     var title by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("-") }
     var imageUrl by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var purchaseLocation by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
+    var showCategoryError by remember { mutableStateOf(false) }
 
     // Lista delle categorie
-    val categories = listOf("Action", "Adventure", "Drama", "Fantasy", "Romance", "Horror")
-    var expanded by remember { mutableStateOf(false) } // Stato per aprire/chiudere il menu a tendina
-    var selectedCategory by remember { mutableStateOf(categories.firstOrNull() ?: "") }
+    val categories = listOf("Action", "Adventure", "Comedy", "Fantasy", "Romance", "Horror")
+    var expanded by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    fun showDatePicker() {
+        val datePickerDialog = DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                // Update the date state here, e.g.,
+                date = "$dayOfMonth-${month + 1}-$year"
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.show()
+    }
 
     Scaffold(
         topBar = {
@@ -54,6 +76,11 @@ fun AddScreen(
                         )
                     }
                 }
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = SnackbarHostState()
             )
         },
         bottomBar = {
@@ -76,13 +103,23 @@ fun AddScreen(
                 )
             }
 
-            // Input Fields
+            // Campo di selezione data
             OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Title") },
+                value = date,
+                onValueChange = { /* ... */ },
+                label = { Text("Date") },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker() }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_calendar),
+                            contentDescription = "Select Date"
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = price,
                 onValueChange = { newPrice ->
@@ -94,12 +131,6 @@ fun AddScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = { Text("Date (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth()
-            )
 
             // Categoria con menu a tendina
             ExposedDropdownMenuBox(
@@ -107,38 +138,30 @@ fun AddScreen(
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TextField(
-                    value = selectedCategory,
-                    onValueChange = { newCategory ->
-                        selectedCategory = newCategory
-                        category = newCategory
-                    },
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { },
                     label = { Text("Select Category") },
                     readOnly = true,
                     trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = expanded
-                        )
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                     },
-                    colors = ExposedDropdownMenuDefaults.textFieldColors()
+                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                    modifier = Modifier.menuAnchor()
                 )
-                // Qui aggiungiamo la gestione corretta dell'espansione del menu
-                if (expanded) {
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        categories.forEach { categoryOption ->
-                            DropdownMenuItem(
-                                onClick = {
-                                    selectedCategory = categoryOption
-                                    category = categoryOption
-                                    expanded = false
-                                },
-                                text = { Text(categoryOption) }
-                            )
-                        }
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    categories.forEach { categoryOption ->
+                        DropdownMenuItem(
+                            onClick = {
+                                category = categoryOption
+                                expanded = false
+                            },
+                            text = { Text(categoryOption) }
+                        )
                     }
                 }
             }
@@ -149,12 +172,14 @@ fun AddScreen(
                 label = { Text("Image URL") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = purchaseLocation,
                 onValueChange = { purchaseLocation = it },
@@ -179,8 +204,12 @@ fun AddScreen(
             // Save Button
             Button(
                 onClick = {
-                    if (title.isBlank() || price.isBlank() || date.isBlank() || category.isBlank()) {
-                        errorMessage = "All fields except image URL are required."
+                    if (title.isBlank() || price.isBlank() || date.isBlank() || category == "-") {
+                        if (category == "-") {
+                            showCategoryError = true
+                        } else {
+                            errorMessage = "All fields except image URL are required."
+                        }
                         return@Button
                     }
 
@@ -233,6 +262,18 @@ fun AddScreen(
                     Text("Add Manga", color = Color.White)
                 }
             }
+
+            // Popup per la categoria non selezionata
+            if (showCategoryError) {
+                SnackbarHost(
+                    hostState = SnackbarHostState().apply {
+                        currentSnackbarData?.dismiss()
+                    }
+                )
+            }
         }
     }
 }
+
+
+
