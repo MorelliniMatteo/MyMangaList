@@ -37,6 +37,7 @@ import com.example.mymangalist.data.UserRepositoryInterface
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import java.io.OutputStream
+import com.example.mymangalist.utils.saveBitmapAsUri
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -241,18 +242,4 @@ private fun fetchLocation(
     } else {
         Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
     }
-}
-
-fun saveBitmapAsUri(context: Context, bitmap: Bitmap): Uri? {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-    }
-
-    val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-    uri?.let {
-        context.contentResolver.openOutputStream(it)?.use { stream ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-        }
-    }
-    return uri
 }

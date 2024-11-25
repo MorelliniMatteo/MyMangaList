@@ -17,7 +17,7 @@ import com.example.mymangalist.ui.screens.HomeScreen
 import com.example.mymangalist.ui.screens.LoginScreen
 import com.example.mymangalist.ui.screens.RegistrationScreen
 import com.example.mymangalist.ui.screens.UserProfileScreen
-import com.example.mymangalist.ui.AddScreen
+import com.example.mymangalist.ui.screens.AddScreen
 import com.example.mymangalist.ui.screens.MapScreen
 import com.google.android.libraries.places.api.Places
 

@@ -1,6 +1,16 @@
-package com.example.mymangalist.ui
+package com.example.mymangalist.ui.screens
 
+import android.Manifest
 import android.app.DatePickerDialog
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.location.Location
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,19 +19,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.Manga
 import com.example.mymangalist.R
 import com.example.mymangalist.data.MangaRepository
-import com.example.mymangalist.ui.screens.MyMangaBottomBar
+import com.example.mymangalist.utils.saveBitmapAsUri
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.widget.DatePicker
-import androidx.compose.ui.platform.LocalContext
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,33 +49,47 @@ fun AddScreen(
     var price by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("-") }
-    var imageUrl by remember { mutableStateOf("") }
+    var profilePictureUri by remember { mutableStateOf<String?>(null) }
     var description by remember { mutableStateOf("") }
-    var purchaseLocation by remember { mutableStateOf("") }
+    var purchaseLocation by remember { mutableStateOf("Non impostata") }
     var errorMessage by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
-    var showCategoryError by remember { mutableStateOf(false) }
-
-    // Lista delle categorie
-    val categories = listOf("Action", "Adventure", "Comedy", "Fantasy", "Romance", "Horror")
     var expanded by remember { mutableStateOf(false) }
-
+    var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val calendar = Calendar.getInstance()
+    val coroutineScope = rememberCoroutineScope()
 
-    fun showDatePicker() {
-        val datePickerDialog = DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                // Update the date state here, e.g.,
-                date = "$dayOfMonth-${month + 1}-$year"
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        datePickerDialog.show()
+    val categories = listOf("Action", "Adventure", "Comedy", "Fantasy", "Romance", "Horror")
+
+    // Location permission launcher
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            fetchLocation(context) { newLocation ->
+                purchaseLocation = newLocation
+            }
+        } else {
+            Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
+        }
     }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let { profilePictureUri = it.toString() }
+        }
+    )
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        onResult = { bitmap ->
+            bitmap?.let {
+                val savedUri = saveBitmapAsUri(context, it)
+                profilePictureUri = savedUri.toString()
+            }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -70,17 +97,9 @@ fun AddScreen(
                 title = { Text("Add Manga") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_back),
-                            contentDescription = "Back"
-                        )
+                        Icon(painter = painterResource(id = R.drawable.ic_back), contentDescription = "Back")
                     }
                 }
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = SnackbarHostState()
             )
         },
         bottomBar = {
@@ -103,14 +122,20 @@ fun AddScreen(
                 )
             }
 
-            // Campo di selezione data
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             OutlinedTextField(
                 value = date,
-                onValueChange = { /* ... */ },
+                onValueChange = { },
                 label = { Text("Date") },
                 readOnly = true,
                 trailingIcon = {
-                    IconButton(onClick = { showDatePicker() }) {
+                    IconButton(onClick = { showDatePicker(context) { newDate -> date = newDate } }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_calendar),
                             contentDescription = "Select Date"
@@ -132,7 +157,7 @@ fun AddScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Categoria con menu a tendina
+            // Category Selection
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -143,9 +168,7 @@ fun AddScreen(
                     onValueChange = { },
                     label = { Text("Select Category") },
                     readOnly = true,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.textFieldColors(),
                     modifier = Modifier.menuAnchor()
                 )
@@ -166,11 +189,16 @@ fun AddScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = imageUrl,
-                onValueChange = { imageUrl = it },
-                label = { Text("Image URL") },
-                modifier = Modifier.fillMaxWidth()
+            Image(
+                painter = if (profilePictureUri != null) {
+                    rememberAsyncImagePainter(profilePictureUri)
+                } else {
+                    painterResource(id = R.drawable.ic_add_manga)
+                },
+                contentDescription = "Selected Image",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clickable { showDialog = true }
             )
 
             OutlinedTextField(
@@ -180,36 +208,36 @@ fun AddScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Purchase Location TextField with Icon
             OutlinedTextField(
                 value = purchaseLocation,
                 onValueChange = { purchaseLocation = it },
                 label = { Text("Purchase Location") },
-                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = {
-                        navController.navigate("map") {
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "purchaseLocation", purchaseLocation
-                            )
+                        // Check for permission before fetching location
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PermissionChecker.PERMISSION_GRANTED) {
+                            fetchLocation(context) { newLocation ->
+                                purchaseLocation = newLocation
+                            }
+                        } else {
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                         }
                     }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_map),
-                            contentDescription = "Open Map"
+                            painter = painterResource(id = R.drawable.ic_location),
+                            contentDescription = "Location Icon"
                         )
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Save Button
             Button(
                 onClick = {
                     if (title.isBlank() || price.isBlank() || date.isBlank() || category == "-") {
-                        if (category == "-") {
-                            showCategoryError = true
-                        } else {
-                            errorMessage = "All fields except image URL are required."
-                        }
+                        errorMessage = "All fields except image URL are required."
                         return@Button
                     }
 
@@ -219,61 +247,73 @@ fun AddScreen(
                         return@Button
                     }
 
-                    val regexDate = Regex("\\d{4}-\\d{2}-\\d{2}")
-                    if (!regexDate.matches(date)) {
-                        errorMessage = "Invalid date format. Use YYYY-MM-DD."
-                        return@Button
-                    }
-
-                    errorMessage = ""
-                    isSaving = true
-
-                    CoroutineScope(Dispatchers.IO).launch {
+                    coroutineScope.launch {
                         try {
                             val manga = Manga(
                                 title = title,
                                 price = priceValue,
                                 date = date,
                                 category = category,
-                                imageUrl = imageUrl,
+                                imageUrl = profilePictureUri ?: "",
                                 description = description,
                                 purchaseLocation = purchaseLocation,
                                 userId = userId
                             )
                             mangaRepository.addManga(manga)
-                            isSaving = false
                             onMangaAdded()
                         } catch (e: Exception) {
-                            isSaving = false
                             errorMessage = "Error saving manga. Please try again."
                         }
                     }
                 },
-                enabled = !isSaving,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White
-                    )
-                } else {
-                    Text("Add Manga", color = Color.White)
-                }
-            }
-
-            // Popup per la categoria non selezionata
-            if (showCategoryError) {
-                SnackbarHost(
-                    hostState = SnackbarHostState().apply {
-                        currentSnackbarData?.dismiss()
-                    }
-                )
+                Text("Add Manga")
             }
         }
     }
+
+    if (showDialog) {
+        showImageSelectionDialog(
+            pickImageLauncher = pickImageLauncher,
+            takePictureLauncher = takePictureLauncher,
+            onDismiss = { showDialog = false }
+        )
+    }
 }
 
+private fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            onDateSelected("$year-${month + 1}-$dayOfMonth")
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+    datePickerDialog.show()
+}
 
+private fun fetchLocation(
+    context: Context,
+    onLocationUpdated: (String) -> Unit
+) {
+    val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
 
+    try {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                val city = addresses?.firstOrNull()?.locality ?: "Unknown"
+                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
+                onLocationUpdated(newLocation)
+                Toast.makeText(context, "Location updated", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(context, "Unable to get location", Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: SecurityException) {
+        Toast.makeText(context, "Permission to access location was denied", Toast.LENGTH_SHORT).show()
+    }
+}
