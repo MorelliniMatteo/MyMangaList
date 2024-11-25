@@ -17,10 +17,12 @@ data class Manga(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     val price: Double,
-    val date: String,
+    val date: String, // Data di acquisto scelta dall'utente.
+    val insertedDate: Long, // Timestamp automatico per data di inserimento.
     val category: String,
     val imageUrl: String,
     val description: String,
     val purchaseLocation: String,
-    val userId: String // Questo dovrebbe essere il username dell'utente
+    val userId: String
 )
+

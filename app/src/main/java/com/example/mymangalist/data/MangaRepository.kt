@@ -1,11 +1,11 @@
 package com.example.mymangalist.data
 
 import android.app.Application
-import com.example.mymangalist.data.MangaDAO
-import com.example.mymangalist.data.UserDatabase
 import com.example.mymangalist.Manga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MangaRepository(application: Application) : MangaRepositoryInterface {
@@ -16,13 +16,13 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
         mangaDAO = db.mangaDAO()
     }
 
-    override fun addManga(manga: Manga) { // Aggiungi 'override' qui
+    override fun addManga(manga: Manga) {
         CoroutineScope(Dispatchers.IO).launch {
             mangaDAO.insertManga(manga)
         }
     }
 
-    override fun getMangasByUser(userId: String, callback: (List<Manga>) -> Unit) { // Aggiungi 'override' qui
+    override fun getMangasByUser(userId: String, callback: (List<Manga>) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             val mangas = mangaDAO.getMangasByUser(userId)
             callback(mangas)
@@ -31,8 +31,15 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
 
     fun getMangaCountByUser(userId: String, callback: UserRepositoryInterface.Callback<Int>) {
         CoroutineScope(Dispatchers.IO).launch {
-            val count = mangaDAO.getCountByUsername(userId)  // Usa userId come parametro
+            val count = mangaDAO.getCountByUsername(userId)
             callback.onResult(count)
+        }
+    }
+
+    fun getAllMangasSortedByDate(callback: (List<Manga>) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val mangas = mangaDAO.getAllMangas().sortedByDescending { it.insertedDate }
+            callback(mangas)
         }
     }
 }

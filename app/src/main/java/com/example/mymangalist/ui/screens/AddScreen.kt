@@ -252,7 +252,8 @@ fun AddScreen(
                             val manga = Manga(
                                 title = title,
                                 price = priceValue,
-                                date = date,
+                                date = date, // Data di acquisto scelta dall'utente.
+                                insertedDate = System.currentTimeMillis(), // Data corrente per `insertedDate`.
                                 category = category,
                                 imageUrl = profilePictureUri ?: "",
                                 description = description,
