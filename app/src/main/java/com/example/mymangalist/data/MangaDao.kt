@@ -21,4 +21,7 @@ interface MangaDAO {
     @Query("SELECT * FROM mangas")
     fun getAllMangas(): List<Manga>
 
+    // Aggiungi il metodo per ottenere un manga tramite ID
+    @Query("SELECT * FROM mangas WHERE id = :mangaId LIMIT 1")
+    fun getMangaById(mangaId: String): Manga?
 }

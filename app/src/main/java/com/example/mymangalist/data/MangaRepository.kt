@@ -4,8 +4,6 @@ import android.app.Application
 import com.example.mymangalist.Manga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -39,10 +37,12 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
         }
     }
 
-    fun getAllMangasSortedByDate(callback: (List<Manga>) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val mangas = mangaDAO.getAllMangas().sortedByDescending { it.insertedDate }
-            callback(mangas)
-        }
+    suspend fun getAllMangasSortedByDate(): List<Manga> = withContext(Dispatchers.IO) {
+        mangaDAO.getAllMangas().sortedByDescending { it.insertedDate }
+    }
+
+    // Metodo corretto per ottenere un manga tramite ID
+    suspend fun getMangaById(mangaId: String): Manga? = withContext(Dispatchers.IO) {
+        mangaDAO.getMangaById(mangaId)
     }
 }

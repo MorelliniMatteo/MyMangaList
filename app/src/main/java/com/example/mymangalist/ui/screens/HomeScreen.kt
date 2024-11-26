@@ -26,7 +26,8 @@ fun HomeScreen(
     navController: NavController,
     userRepository: UserRepository,
     mangaRepository: MangaRepository,
-    username: String
+    username: String,
+    onMangaClick: (Manga) -> Unit // Aggiungi questo parametro
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var mangaList by remember { mutableStateOf<List<Manga>>(emptyList()) }
@@ -49,8 +50,6 @@ fun HomeScreen(
             }
         })
     }
-
-
 
     Scaffold(
         topBar = {
@@ -113,7 +112,8 @@ fun HomeScreen(
                         MangaCard(
                             manga = manga,
                             onDetailsClick = { selectedManga ->
-                                navController.navigate("details/${selectedManga.id}")
+                                // Quando un manga viene cliccato, chiama onMangaClick
+                                onMangaClick(selectedManga)
                             }
                         )
                     }

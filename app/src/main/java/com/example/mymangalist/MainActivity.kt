@@ -11,14 +11,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
-import com.example.mymangalist.ui.screens.HomeScreen
-import com.example.mymangalist.ui.screens.LoginScreen
-import com.example.mymangalist.ui.screens.RegistrationScreen
-import com.example.mymangalist.ui.screens.UserProfileScreen
-import com.example.mymangalist.ui.screens.AddScreen
-import com.example.mymangalist.ui.screens.MapScreen
+import com.example.mymangalist.data.UserRepository
+import com.example.mymangalist.ui.screens.*
 import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +22,7 @@ class MainActivity : ComponentActivity() {
 
         // Inizializzazione della Places API
         if (!Places.isInitialized()) {
-            Places.initialize(applicationContext, "AIzaSyBx0rStCAT7tNnbd3XR6zH4yluzb-uRMXY")
+            Places.initialize(applicationContext, "API_KEY")
         }
 
         val userRepository = UserRepository(application)
@@ -35,7 +30,7 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel()
 
         setContent {
-            MyMangaListApp(userRepository, mangaRepository)
+            MyMangaListApp(userRepository = userRepository, mangaRepository = mangaRepository)
         }
     }
 
@@ -73,7 +68,10 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 navController = navController,
                 userRepository = userRepository,
                 mangaRepository = mangaRepository,
-                username = username
+                username = username,
+                onMangaClick = { manga ->
+                    navController.navigate("details/${manga.id}/$username")
+                }
             )
         }
         composable("profile/{username}") { backStackEntry ->
@@ -101,6 +99,17 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 onLocationSelected = { cityName, latLng ->
                     // Handle selected location (cityName, latLng)
                 }
+            )
+        }
+        composable("details/{mangaId}/{username}") { backStackEntry ->
+            val mangaId = backStackEntry.arguments?.getString("mangaId") ?: "unknown"
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            DetailsMangaScreenComposable(
+                mangaId = mangaId,
+                mangaRepository = mangaRepository,
+                navController = navController,
+                username = username,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
