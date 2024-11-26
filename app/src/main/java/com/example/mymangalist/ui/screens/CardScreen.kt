@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.Manga
+import com.example.mymangalist.R
 
 
 @Composable
@@ -29,7 +30,8 @@ fun MangaCard(
         Row(modifier = Modifier.padding(16.dp)) {
             // Immagine del Manga
             val imagePainter = rememberAsyncImagePainter(
-                model = manga.imageUrl.ifEmpty { "file:///android_asset/default.png" }
+                model = manga.imageUrl.takeIf { it.isNotEmpty() }
+                    ?: R.drawable.manga_default // Fallback all'immagine predefinita
             )
             Image(
                 painter = imagePainter,

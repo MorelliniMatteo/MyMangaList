@@ -14,8 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mymangalist.R
 import com.example.mymangalist.Manga
+import com.example.mymangalist.User
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepository
+import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.ui.screens.MyMangaBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,12 +31,26 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var mangaList by remember { mutableStateOf<List<Manga>>(emptyList()) }
 
-    // Carica i manga all'avvio dello schermo
+    // Ottieni l'utente loggato
+    var userId by remember { mutableStateOf("") }
+
+    // Carica l'ID dell'utente e i manga corrispondenti
     LaunchedEffect(Unit) {
-        mangaRepository.getAllMangasSortedByDate { mangas ->
-            mangaList = mangas
-        }
+        userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
+            override fun onResult(user: User?) {
+                user?.let {
+                    userId = it.username
+                    mangaRepository.getMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
+                        override fun onResult(mangas: List<Manga>) {
+                            mangaList = mangas
+                        }
+                    })
+                }
+            }
+        })
     }
+
+
 
     Scaffold(
         topBar = {
@@ -48,13 +64,19 @@ fun HomeScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* Azione per navigare ai preferiti */ }) {
-                        Icon(painter = painterResource(id = R.drawable.ic_favorite), contentDescription = "Favorites")
+                    IconButton(onClick = { /* Naviga ai preferiti */ }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_favorite),
+                            contentDescription = "Favorites"
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Azione per aprire il filtro */ }) {
-                        Icon(painter = painterResource(id = R.drawable.ic_filter), contentDescription = "Filter")
+                    IconButton(onClick = { /* Filtra i manga */ }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_filter),
+                            contentDescription = "Filter"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

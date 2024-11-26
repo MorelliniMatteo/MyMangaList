@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MangaRepository(application: Application) : MangaRepositoryInterface {
     private val mangaDAO: MangaDAO
@@ -22,10 +23,12 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
         }
     }
 
-    override fun getMangasByUser(userId: String, callback: (List<Manga>) -> Unit) {
+    override fun getMangasByUser(userId: String, callback: UserRepositoryInterface.Callback<List<Manga>>) {
         CoroutineScope(Dispatchers.IO).launch {
             val mangas = mangaDAO.getMangasByUser(userId)
-            callback(mangas)
+            withContext(Dispatchers.Main) {
+                callback.onResult(mangas)
+            }
         }
     }
 
