@@ -3,7 +3,6 @@ package com.example.mymangalist.ui.screens
 import android.Manifest
 import android.app.DatePickerDialog
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.net.Uri
@@ -30,10 +29,10 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.Manga
 import com.example.mymangalist.R
 import com.example.mymangalist.data.MangaRepository
+import com.example.mymangalist.ui.components.MyMangaBottomBar
 import com.example.mymangalist.utils.saveBitmapAsUri
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.*
 

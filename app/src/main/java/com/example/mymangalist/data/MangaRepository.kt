@@ -11,7 +11,7 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
     private val mangaDAO: MangaDAO
 
     init {
-        val db: UserDatabase = UserDatabase.getDatabase(application)
+        val db = UserDatabase.getDatabase(application)
         mangaDAO = db.mangaDAO()
     }
 
@@ -21,28 +21,43 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
         }
     }
 
-    override fun getMangasByUser(userId: String, callback: UserRepositoryInterface.Callback<List<Manga>>) {
+    override fun getMangasByUser(
+        userId: String,
+        filter: String?,
+        callback: UserRepositoryInterface.Callback<List<Manga>>
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
             val mangas = mangaDAO.getMangasByUser(userId)
+            println("Mangas from DB: $mangas")  // Log per verificare i manga estratti dal DB
+
+            // Applicare il filtro se presente
+            val filteredMangas = if (filter.isNullOrEmpty()) {
+                mangas // Nessun filtro, restituisce tutti i manga
+            } else {
+                mangas.filter { it.category.equals(filter, ignoreCase = true) }
+            }
+
             withContext(Dispatchers.Main) {
-                callback.onResult(mangas)
+                println("Filtered mangas: $filteredMangas")  // Log per verificare i manga filtrati
+                callback.onResult(filteredMangas)
             }
         }
     }
 
-    fun getMangaCountByUser(userId: String, callback: UserRepositoryInterface.Callback<Int>) {
+    override fun getMangaCountByUser(userId: String, callback: UserRepositoryInterface.Callback<Int>) {
         CoroutineScope(Dispatchers.IO).launch {
             val count = mangaDAO.getCountByUsername(userId)
-            callback.onResult(count)
+            withContext(Dispatchers.Main) {
+                callback.onResult(count)
+            }
         }
     }
 
-    suspend fun getAllMangasSortedByDate(): List<Manga> = withContext(Dispatchers.IO) {
+    override suspend fun getAllMangasSortedByDate(): List<Manga> = withContext(Dispatchers.IO) {
         mangaDAO.getAllMangas().sortedByDescending { it.insertedDate }
     }
 
-    // Metodo corretto per ottenere un manga tramite ID
-    suspend fun getMangaById(mangaId: String): Manga? = withContext(Dispatchers.IO) {
+    override suspend fun getMangaById(mangaId: String): Manga? = withContext(Dispatchers.IO) {
         mangaDAO.getMangaById(mangaId)
     }
 }

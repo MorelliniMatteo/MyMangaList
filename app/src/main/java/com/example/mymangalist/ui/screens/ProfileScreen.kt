@@ -1,14 +1,11 @@
 package com.example.mymangalist.ui.screens
 
 import android.Manifest
-import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.location.Geocoder
 import android.location.Location
 import android.net.Uri
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -20,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,9 +30,9 @@ import com.example.mymangalist.User
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepositoryInterface
+import com.example.mymangalist.ui.components.MyMangaBottomBar
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
-import java.io.OutputStream
 import com.example.mymangalist.utils.saveBitmapAsUri
 import java.util.Locale
 

@@ -64,11 +64,13 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
         }
         composable("home/{username}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            val filter = backStackEntry.arguments?.getString("filter") ?: ""
             HomeScreen(
                 navController = navController,
                 userRepository = userRepository,
                 mangaRepository = mangaRepository,
                 username = username,
+                filter = filter,  // Passa il filtro
                 onMangaClick = { manga ->
                     navController.navigate("details/${manga.id}/$username")
                 }
@@ -110,6 +112,24 @@ fun MyMangaListApp(userRepository: UserRepository, mangaRepository: MangaReposit
                 navController = navController,
                 username = username,
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable("filter_screen/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            FilterScreen(navController = navController, username = username)
+        }
+        composable("home/{username}/{filter}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            val filter = backStackEntry.arguments?.getString("filter") ?: ""
+            HomeScreen(
+                navController = navController,
+                userRepository = userRepository,
+                mangaRepository = mangaRepository,
+                username = username,
+                filter = filter,
+                onMangaClick = { manga ->
+                    navController.navigate("details/${manga.id}/$username")
+                }
             )
         }
     }

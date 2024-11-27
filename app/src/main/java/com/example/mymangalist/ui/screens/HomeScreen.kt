@@ -12,13 +12,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.mymangalist.R
 import com.example.mymangalist.Manga
 import com.example.mymangalist.User
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.data.UserRepositoryInterface
-import com.example.mymangalist.ui.screens.MyMangaBottomBar
+import com.example.mymangalist.ui.components.MyMangaBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,23 +28,34 @@ fun HomeScreen(
     userRepository: UserRepository,
     mangaRepository: MangaRepository,
     username: String,
-    onMangaClick: (Manga) -> Unit // Aggiungi questo parametro
+    filter: String = "",  // Default value is an empty string, meaning no filter.
+    onMangaClick: (Manga) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var mangaList by remember { mutableStateOf<List<Manga>>(emptyList()) }
-
-    // Ottieni l'utente loggato
     var userId by remember { mutableStateOf("") }
 
-    // Carica l'ID dell'utente e i manga corrispondenti
-    LaunchedEffect(Unit) {
+    // Osserva l'argomento "filter" dalla navigazione
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val filter = currentBackStackEntry?.arguments?.getString("filter") ?: ""
+    println("Received filter: $filter")  // Aggiungi log per verificare il valore del filtro
+
+    // Carica i dati dei manga con il filtro ogni volta che il filtro cambia
+    LaunchedEffect(filter) {
+        println("DEBUG: Filtro ricevuto: '$filter'")
         userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
-            override fun onResult(user: User?) {
-                user?.let {
+            override fun onResult(result: User?) {
+                result?.let {
                     userId = it.username
-                    mangaRepository.getMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
-                        override fun onResult(mangas: List<Manga>) {
-                            mangaList = mangas
+                    println("DEBUG: UserId trovato: '$userId'")
+                    mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
+                        override fun onResult(result: List<Manga>) {
+                            println("DEBUG: Manga caricati: $result")
+                            mangaList = if (filter.isEmpty()) {
+                                result  // Show all mangas if no filter
+                            } else {
+                                result.filter { it.category.equals(filter, ignoreCase = true) }
+                            }
                         }
                     })
                 }
@@ -63,7 +75,7 @@ fun HomeScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* Naviga ai preferiti */ }) {
+                    IconButton(onClick = { /* Navigate to favorites */ }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_favorite),
                             contentDescription = "Favorites"
@@ -71,7 +83,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Filtra i manga */ }) {
+                    IconButton(onClick = { navController.navigate("filter_screen/$username") }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_filter),
                             contentDescription = "Filter"
@@ -92,29 +104,25 @@ fun HomeScreen(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // Barra di ricerca
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    placeholder = { Text("Cerca manga...") }
+                    placeholder = { Text("Search manga...") }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lista dei manga filtrati
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    // Apply filter for category and search
                     items(mangaList.filter { it.title.contains(searchQuery, ignoreCase = true) }) { manga ->
                         MangaCard(
                             manga = manga,
-                            onDetailsClick = { selectedManga ->
-                                // Quando un manga viene cliccato, chiama onMangaClick
-                                onMangaClick(selectedManga)
-                            }
+                            onDetailsClick = { selectedManga -> onMangaClick(selectedManga) }
                         )
                     }
                 }

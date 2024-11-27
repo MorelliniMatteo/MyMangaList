@@ -1,4 +1,4 @@
-package com.example.mymangalist.ui.screens  // o com.example.mymangalist.ui.components
+package com.example.mymangalist.ui.components  // o com.example.mymangalist.ui.components
 
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.*
