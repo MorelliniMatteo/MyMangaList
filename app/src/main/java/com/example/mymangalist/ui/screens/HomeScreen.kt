@@ -38,7 +38,8 @@ fun HomeScreen(
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val filter = currentBackStackEntry?.arguments?.getString("filter") ?: ""
-    println("Received filter: $filter")  // Aggiungi log per verificare il valore del filtro
+
+    println("Received filter: $filter") // Log per debug del filtro
 
     // Carica i dati dei manga con il filtro ogni volta che il filtro cambia
     LaunchedEffect(filter, showFavorites) {
@@ -52,7 +53,7 @@ fun HomeScreen(
                         mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
                             override fun onResult(result: List<Manga>) {
                                 println("DEBUG: Manga preferiti caricati: $result")
-                                mangaList = result
+                                mangaList = result.sortedByDescending { it.insertedDate } // Ordina dal più recente
                             }
                         })
                     } else {
@@ -60,9 +61,11 @@ fun HomeScreen(
                             override fun onResult(result: List<Manga>) {
                                 println("DEBUG: Manga caricati: $result")
                                 mangaList = if (filter.isEmpty()) {
-                                    result  // Show all mangas if no filter
+                                    result.sortedByDescending { it.insertedDate } // Ordina dal più recente
                                 } else {
-                                    result.filter { it.category.equals(filter, ignoreCase = true) }
+                                    result
+                                        .filter { it.category.equals(filter, ignoreCase = true) }
+                                        .sortedByDescending { it.insertedDate } // Ordina dopo aver filtrato
                                 }
                             }
                         })
@@ -90,7 +93,7 @@ fun HomeScreen(
                                 id = if (showFavorites) R.drawable.ic_favorite_filled else R.drawable.ic_favorite
                             ),
                             contentDescription = if (showFavorites) "Favorites filled" else "Favorites",
-                            tint = Color.Black // Mantieni il colore del tema per uniformità
+                            tint = Color.Black
                         )
                     }
                 },
@@ -135,7 +138,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .weight(1f)
                 ) {
-                    // Apply filter for category and search
+                    // Filtra e ordina per titolo e data di inserimento
                     items(mangaList.filter { it.title.contains(searchQuery, ignoreCase = true) }) { manga ->
                         MangaCard(
                             manga = manga,
