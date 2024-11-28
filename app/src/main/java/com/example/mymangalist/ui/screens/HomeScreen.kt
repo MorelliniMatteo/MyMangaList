@@ -3,6 +3,7 @@ package com.example.mymangalist.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -138,8 +139,10 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    placeholder = { Text("Search manga...") }
+                    placeholder = { Text("Search manga...") },
+                    shape = RoundedCornerShape(10.dp) // Angoli arrotondati
                 )
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 

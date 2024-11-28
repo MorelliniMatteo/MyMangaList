@@ -13,16 +13,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.R
@@ -111,20 +112,29 @@ fun UserProfileScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(text = "MyMangaList", fontWeight = FontWeight.Bold)
-                        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(), // Per far sì che occupi tutta la larghezza disponibile
+                        horizontalArrangement = Arrangement.Center // Per centrare il contenuto
+                    ) {
+                        Text(
+                            text = "Profilo Utente",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(painter = painterResource(id = R.drawable.ic_back), contentDescription = "Back")
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         bottomBar = { MyMangaBottomBar(navController = navController, username = username) },
@@ -136,30 +146,70 @@ fun UserProfileScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = if (profilePictureUri != null) {
-                        rememberAsyncImagePainter(profilePictureUri)
-                    } else {
-                        painterResource(id = R.drawable.ic_default_profile)
-                    },
-                    contentDescription = "Immagine del profilo",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clickable { showDialog = true }
-                )
+                // User Profile Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Profile Image
+                        // Profile Image
+                        Image(
+                            painter = if (profilePictureUri != null) {
+                                rememberAsyncImagePainter(profilePictureUri)
+                            } else {
+                                painterResource(id = R.drawable.ic_default_profile)
+                            },
+                            contentDescription = "Immagine del profilo",
+                            modifier = Modifier
+                                .fillMaxWidth() // Per far sì che l'immagine sia larga quanto la card
+                                .height(200.dp) // Imposta un'altezza fissa per l'immagine
+                                .clip(MaterialTheme.shapes.medium) // Usa angoli arrotondati
+                                .clickable { showDialog = true }
+                        )
+
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // User Info
+                        Text(
+                            text = user?.username ?: "Username non disponibile",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = user?.email ?: "Email non disponibile",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Totale Manga Letti: $mangaCount",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Posizione: $location",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(text = "Username: ${user?.username}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Email: ${user?.email}", fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Totale Manga Letti: $mangaCount", fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Posizione: $location", fontSize = 16.sp)
-
+                // Update Location Button
                 Button(
                     onClick = {
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PermissionChecker.PERMISSION_GRANTED) {
+                            == PackageManager.PERMISSION_GRANTED
+                        ) {
                             fetchLocation(context, userRepository, username) { newLocation ->
                                 location = newLocation // Aggiorna la UI
                             }
@@ -167,7 +217,10 @@ fun UserProfileScreen(
                             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                         }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 ) {
                     Text("Aggiorna Posizione")
                 }
@@ -181,6 +234,33 @@ fun UserProfileScreen(
             takePictureLauncher = takePictureLauncher,
             onDismiss = { showDialog = false }
         )
+    }
+}
+
+fun fetchLocation(
+    context: Context,
+    userRepository: UserRepository,
+    username: String,
+    onLocationUpdated: (String) -> Unit
+) {
+    if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        == PackageManager.PERMISSION_GRANTED
+    ) {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                val city = addresses?.firstOrNull()?.locality ?: "Posizione sconosciuta"
+                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
+
+                userRepository.updateLocation(username, newLocation)
+                onLocationUpdated(newLocation) // Aggiorna la UI
+                Toast.makeText(context, "Posizione aggiornata", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
+        }
+    } else {
+        Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -211,31 +291,4 @@ fun showImageSelectionDialog(
             }
         }
     )
-}
-
-private fun fetchLocation(
-    context: Context,
-    userRepository: UserRepository,
-    username: String,
-    onLocationUpdated: (String) -> Unit
-) {
-    if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-        == PackageManager.PERMISSION_GRANTED
-    ) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-                val city = addresses?.firstOrNull()?.locality ?: "Posizione sconosciuta"
-                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
-
-                userRepository.updateLocation(username, newLocation)
-                onLocationUpdated(newLocation) // Aggiorna la UI
-                Toast.makeText(context, "Posizione aggiornata", Toast.LENGTH_SHORT).show()
-            } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
-        }
-    } else {
-        Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
-    }
 }
