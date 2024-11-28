@@ -12,6 +12,8 @@ interface MangaRepositoryInterface {
     // Nuova funzione per aggiornare lo stato di favourite
     fun updateFavouriteStatus(mangaId: Long, userId: String, isFavourite: Boolean)
 
+    fun searchMangasByTitle(userId: String, query: String, callback: UserRepositoryInterface.Callback<List<Manga>>)
+
     // Nuova funzione per ottenere i manga preferiti di un utente
     fun getFavouriteMangasByUser(userId: String, callback: UserRepositoryInterface.Callback<List<Manga>>)
 }

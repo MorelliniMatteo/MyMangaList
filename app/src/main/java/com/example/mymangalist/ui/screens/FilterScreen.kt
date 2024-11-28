@@ -74,8 +74,10 @@ fun FilterScreen(navController: NavController, username: String) {
             // Add the "Remove Filter" button
             Button(
                 onClick = {
-                    println("Filter removed") // Log to verify removal
-                    navController.navigate("home/$username") // Navigate without a filter
+                    println("Filter removed") // Log per verificare la rimozione
+                    navController.navigate("home/$username") {
+                        popUpTo("home/$username") { inclusive = true }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -84,6 +86,8 @@ fun FilterScreen(navController: NavController, username: String) {
             ) {
                 Text(text = "Remove Filter", fontWeight = FontWeight.Bold)
             }
+
+
         }
     }
 }

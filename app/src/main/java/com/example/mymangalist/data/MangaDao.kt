@@ -32,4 +32,7 @@ interface MangaDAO {
     // Nuova query per ottenere i manga preferiti di un utente
     @Query("SELECT * FROM mangas WHERE userId = :userId AND favourite = 1")
     fun getFavouriteMangasByUser(userId: String): List<Manga>
+
+    @Query("SELECT * FROM mangas WHERE userId = :userId AND title LIKE :query || '%' ORDER BY insertedDate DESC")
+    fun searchByTitle(userId: String, query: String): List<Manga>
 }

@@ -39,40 +39,50 @@ fun HomeScreen(
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val filter = currentBackStackEntry?.arguments?.getString("filter") ?: ""
 
-    println("Received filter: $filter") // Log per debug del filtro
+    // Metodo per aggiornare la lista in base alla ricerca
+    fun updateMangaList() {
+        if (userId.isNotEmpty()) {
+            if (searchQuery.isNotEmpty()) {
+                mangaRepository.searchMangasByTitle(userId, searchQuery, object : UserRepositoryInterface.Callback<List<Manga>> {
+                    override fun onResult(result: List<Manga>) {
+                        mangaList = result.sortedByDescending { it.insertedDate }
+                    }
+                })
+            } else if (showFavorites) {
+                mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
+                    override fun onResult(result: List<Manga>) {
+                        mangaList = result.sortedByDescending { it.insertedDate }
+                    }
+                })
+            } else {
+                mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
+                    override fun onResult(result: List<Manga>) {
+                        mangaList = result.sortedByDescending { it.insertedDate }
+                    }
+                })
+            }
+        }
+    }
 
-    // Carica i dati dei manga con il filtro ogni volta che il filtro cambia
-    LaunchedEffect(filter, showFavorites) {
-        println("DEBUG: Filtro ricevuto: '$filter'")
+    // Carica i manga inizialmente
+    LaunchedEffect(Unit) {
         userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
             override fun onResult(result: User?) {
                 result?.let {
                     userId = it.username
-                    println("DEBUG: UserId trovato: '$userId'")
-                    if (showFavorites) {
-                        mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
-                            override fun onResult(result: List<Manga>) {
-                                println("DEBUG: Manga preferiti caricati: $result")
-                                mangaList = result.sortedByDescending { it.insertedDate } // Ordina dal più recente
-                            }
-                        })
-                    } else {
-                        mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
-                            override fun onResult(result: List<Manga>) {
-                                println("DEBUG: Manga caricati: $result")
-                                mangaList = if (filter.isEmpty()) {
-                                    result.sortedByDescending { it.insertedDate } // Ordina dal più recente
-                                } else {
-                                    result
-                                        .filter { it.category.equals(filter, ignoreCase = true) }
-                                        .sortedByDescending { it.insertedDate } // Ordina dopo aver filtrato
-                                }
-                            }
-                        })
-                    }
+                    updateMangaList()
                 }
             }
         })
+    }
+
+    // Aggiorna la lista quando cambia il filtro, preferiti o la ricerca
+    LaunchedEffect(searchQuery, showFavorites, filter) {
+        if (userId.isNotEmpty()) {
+            updateMangaList()
+        } else {
+            println("User ID is empty; waiting for user data to load.")
+        }
     }
 
     Scaffold(
@@ -138,8 +148,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .weight(1f)
                 ) {
-                    // Filtra e ordina per titolo e data di inserimento
-                    items(mangaList.filter { it.title.contains(searchQuery, ignoreCase = true) }) { manga ->
+                    items(mangaList) { manga ->
                         MangaCard(
                             manga = manga,
                             onDetailsClick = { selectedManga -> onMangaClick(selectedManga) },

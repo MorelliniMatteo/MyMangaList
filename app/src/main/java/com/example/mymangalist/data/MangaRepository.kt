@@ -80,4 +80,13 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
             }
         }
     }
+
+    override fun searchMangasByTitle(userId: String, query: String, callback: UserRepositoryInterface.Callback<List<Manga>>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val filteredMangas = mangaDAO.searchByTitle(userId, query)
+            withContext(Dispatchers.Main) {
+                callback.onResult(filteredMangas)
+            }
+        }
+    }
 }
