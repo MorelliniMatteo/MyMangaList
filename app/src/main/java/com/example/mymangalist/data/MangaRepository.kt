@@ -60,4 +60,24 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
     override suspend fun getMangaById(mangaId: String): Manga? = withContext(Dispatchers.IO) {
         mangaDAO.getMangaById(mangaId)
     }
+
+    // Nuova funzione per aggiornare lo stato di favourite
+    override fun updateFavouriteStatus(mangaId: Long, userId: String, isFavourite: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            mangaDAO.updateFavouriteStatus(mangaId, userId, isFavourite)
+        }
+    }
+
+    // Nuova funzione per ottenere i manga preferiti di un utente
+    override fun getFavouriteMangasByUser(
+        userId: String,
+        callback: UserRepositoryInterface.Callback<List<Manga>>
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val favouriteMangas = mangaDAO.getFavouriteMangasByUser(userId)
+            withContext(Dispatchers.Main) {
+                callback.onResult(favouriteMangas)
+            }
+        }
+    }
 }

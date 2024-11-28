@@ -34,6 +34,7 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var mangaList by remember { mutableStateOf<List<Manga>>(emptyList()) }
     var userId by remember { mutableStateOf("") }
+    var showFavorites by remember { mutableStateOf(false) }
 
     // Osserva l'argomento "filter" dalla navigazione
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -41,23 +42,32 @@ fun HomeScreen(
     println("Received filter: $filter")  // Aggiungi log per verificare il valore del filtro
 
     // Carica i dati dei manga con il filtro ogni volta che il filtro cambia
-    LaunchedEffect(filter) {
+    LaunchedEffect(filter, showFavorites) {
         println("DEBUG: Filtro ricevuto: '$filter'")
         userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
             override fun onResult(result: User?) {
                 result?.let {
                     userId = it.username
                     println("DEBUG: UserId trovato: '$userId'")
-                    mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
-                        override fun onResult(result: List<Manga>) {
-                            println("DEBUG: Manga caricati: $result")
-                            mangaList = if (filter.isEmpty()) {
-                                result  // Show all mangas if no filter
-                            } else {
-                                result.filter { it.category.equals(filter, ignoreCase = true) }
+                    if (showFavorites) {
+                        mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
+                            override fun onResult(result: List<Manga>) {
+                                println("DEBUG: Manga preferiti caricati: $result")
+                                mangaList = result
                             }
-                        }
-                    })
+                        })
+                    } else {
+                        mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
+                            override fun onResult(result: List<Manga>) {
+                                println("DEBUG: Manga caricati: $result")
+                                mangaList = if (filter.isEmpty()) {
+                                    result  // Show all mangas if no filter
+                                } else {
+                                    result.filter { it.category.equals(filter, ignoreCase = true) }
+                                }
+                            }
+                        })
+                    }
                 }
             }
         })
@@ -75,10 +85,13 @@ fun HomeScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { /* Navigate to favorites */ }) {
+                    IconButton(onClick = { showFavorites = !showFavorites }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_favorite),
-                            contentDescription = "Favorites"
+                            painter = painterResource(
+                                id = if (showFavorites) R.drawable.ic_favorite_filled else R.drawable.ic_favorite
+                            ),
+                            contentDescription = if (showFavorites) "Favorites filled" else "Favorites",
+                            tint = Color.Black // Mantieni il colore del tema per uniformità
                         )
                     }
                 },
@@ -116,13 +129,17 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
                 ) {
                     // Apply filter for category and search
                     items(mangaList.filter { it.title.contains(searchQuery, ignoreCase = true) }) { manga ->
                         MangaCard(
                             manga = manga,
-                            onDetailsClick = { selectedManga -> onMangaClick(selectedManga) }
+                            onDetailsClick = { selectedManga -> onMangaClick(selectedManga) },
+                            mangaRepository = mangaRepository,
+                            userId = userId
                         )
                     }
                 }

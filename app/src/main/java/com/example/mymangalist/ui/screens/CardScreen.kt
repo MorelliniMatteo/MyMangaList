@@ -1,26 +1,33 @@
 package com.example.mymangalist.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.mymangalist.Manga
 import com.example.mymangalist.R
-
+import com.example.mymangalist.data.MangaRepository
 
 @Composable
 fun MangaCard(
-    manga: Manga,  // Modello di dati Manga
+    manga: Manga,
     onDetailsClick: (Manga) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mangaRepository: MangaRepository,
+    userId: String
 ) {
+    var isStarred by remember(manga.id) {
+        mutableStateOf(manga.favourite)
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -57,8 +64,28 @@ fun MangaCard(
                     color = Color.Gray
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { onDetailsClick(manga) }) {
-                    Text("Vedi dettagli")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(onClick = { onDetailsClick(manga) }) {
+                        Text("Vedi dettagli")
+                    }
+                    Icon(
+                        painter = painterResource(
+                            id = if (isStarred) R.drawable.ic_favorite_filled else R.drawable.ic_favorite
+                        ),
+                        contentDescription = if (isStarred) "Favourite filled" else "Favourite",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                val newState = !isStarred
+                                isStarred = newState
+                                mangaRepository.updateFavouriteStatus(manga.id, userId, newState)
+                            }
+                    )
+
                 }
             }
         }

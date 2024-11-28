@@ -23,5 +23,6 @@ data class Manga(
     val imageUrl: String,
     val description: String,
     val purchaseLocation: String,
-    val userId: String
+    val userId: String,
+    val favourite: Boolean = false
 )
