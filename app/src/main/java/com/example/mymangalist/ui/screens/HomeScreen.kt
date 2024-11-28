@@ -28,7 +28,7 @@ fun HomeScreen(
     userRepository: UserRepository,
     mangaRepository: MangaRepository,
     username: String,
-    filter: String = "",  // Default value is an empty string, meaning no filter.
+    filter: String = "",
     onMangaClick: (Manga) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -36,7 +36,6 @@ fun HomeScreen(
     var userId by remember { mutableStateOf("") }
     var showFavorites by remember { mutableStateOf(false) }
 
-    // Osserva l'argomento "filter" dalla navigazione
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val filter = currentBackStackEntry?.arguments?.getString("filter") ?: ""
     println("Received filter: $filter")  // Aggiungi log per verificare il valore del filtro
@@ -98,8 +97,11 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = { navController.navigate("filter_screen/$username") }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_filter),
-                            contentDescription = "Filter"
+                            painter = painterResource(
+                                id = if (filter.isNotEmpty()) R.drawable.ic_filter_filled else R.drawable.ic_filter
+                            ),
+                            contentDescription = "Filter",
+                            tint = Color.Black
                         )
                     }
                 },
