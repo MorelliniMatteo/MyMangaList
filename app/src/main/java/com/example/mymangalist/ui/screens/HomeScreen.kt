@@ -38,34 +38,36 @@ fun HomeScreen(
     var showFavorites by remember { mutableStateOf(false) }
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val filter = currentBackStackEntry?.arguments?.getString("filter") ?: ""
+    val selectedFilter = currentBackStackEntry?.arguments?.getString("filter") ?: filter
 
-    // Metodo per aggiornare la lista in base alla ricerca
     fun updateMangaList() {
         if (userId.isNotEmpty()) {
-            if (searchQuery.isNotEmpty()) {
-                mangaRepository.searchMangasByTitle(userId, searchQuery, object : UserRepositoryInterface.Callback<List<Manga>> {
-                    override fun onResult(result: List<Manga>) {
-                        mangaList = result.sortedByDescending { it.insertedDate }
-                    }
-                })
-            } else if (showFavorites) {
-                mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
-                    override fun onResult(result: List<Manga>) {
-                        mangaList = result.sortedByDescending { it.insertedDate }
-                    }
-                })
-            } else {
-                mangaRepository.getMangasByUser(userId, filter, object : UserRepositoryInterface.Callback<List<Manga>> {
-                    override fun onResult(result: List<Manga>) {
-                        mangaList = result.sortedByDescending { it.insertedDate }
-                    }
-                })
+            when {
+                searchQuery.isNotEmpty() -> {
+                    mangaRepository.searchMangasByTitle(userId, searchQuery, object : UserRepositoryInterface.Callback<List<Manga>> {
+                        override fun onResult(result: List<Manga>) {
+                            mangaList = result.sortedByDescending { it.insertedDate }
+                        }
+                    })
+                }
+                showFavorites -> {
+                    mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
+                        override fun onResult(result: List<Manga>) {
+                            mangaList = result.sortedByDescending { it.insertedDate }
+                        }
+                    })
+                }
+                else -> {
+                    mangaRepository.getMangasByUser(userId, selectedFilter, object : UserRepositoryInterface.Callback<List<Manga>> {
+                        override fun onResult(result: List<Manga>) {
+                            mangaList = result.sortedByDescending { it.insertedDate }
+                        }
+                    })
+                }
             }
         }
     }
 
-    // Carica i manga inizialmente
     LaunchedEffect(Unit) {
         userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
             override fun onResult(result: User?) {
@@ -77,12 +79,9 @@ fun HomeScreen(
         })
     }
 
-    // Aggiorna la lista quando cambia il filtro, preferiti o la ricerca
-    LaunchedEffect(searchQuery, showFavorites, filter) {
+    LaunchedEffect(searchQuery, showFavorites, selectedFilter) {
         if (userId.isNotEmpty()) {
             updateMangaList()
-        } else {
-            println("User ID is empty; waiting for user data to load.")
         }
     }
 
@@ -112,7 +111,7 @@ fun HomeScreen(
                     IconButton(onClick = { navController.navigate("filter_screen/$username") }) {
                         Icon(
                             painter = painterResource(
-                                id = if (filter.isNotEmpty()) R.drawable.ic_filter_filled else R.drawable.ic_filter
+                                id = if (selectedFilter.isNotEmpty()) R.drawable.ic_filter_filled else R.drawable.ic_filter
                             ),
                             contentDescription = "Filter",
                             tint = Color.Black
@@ -140,9 +139,8 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                     placeholder = { Text("Search manga...") },
-                    shape = RoundedCornerShape(10.dp) // Angoli arrotondati
+                    shape = RoundedCornerShape(10.dp)
                 )
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 

@@ -28,17 +28,10 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             val mangas = mangaDAO.getMangasByUser(userId)
-            println("Mangas from DB: $mangas")  // Log per verificare i manga estratti dal DB
-
-            // Applicare il filtro se presente
-            val filteredMangas = if (filter.isNullOrEmpty()) {
-                mangas // Nessun filtro, restituisce tutti i manga
-            } else {
-                mangas.filter { it.category.equals(filter, ignoreCase = true) }
+            val filteredMangas = mangas.filter { manga ->
+                filter.isNullOrEmpty() || manga.category.equals(filter, ignoreCase = true)
             }
-
             withContext(Dispatchers.Main) {
-                println("Filtered mangas: $filteredMangas")  // Log per verificare i manga filtrati
                 callback.onResult(filteredMangas)
             }
         }

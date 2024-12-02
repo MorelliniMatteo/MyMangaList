@@ -59,8 +59,11 @@ fun FilterScreen(navController: NavController, username: String) {
             categories.forEach { category ->
                 Button(
                     onClick = {
-                        println("Selected category: $category")  // Log per verificare la selezione
-                        navController.navigate("home/$username/$category")
+                        println("Navigating to category: $category for user: $username")
+                        navController.navigate("home/$username/$category") {
+                            popUpTo("home/$username") { inclusive = false }
+                            launchSingleTop = true
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -71,12 +74,12 @@ fun FilterScreen(navController: NavController, username: String) {
                 }
             }
 
-            // Add the "Remove Filter" button
             Button(
                 onClick = {
-                    println("Filter removed") // Log per verificare la rimozione
+                    println("Removing filter for user: $username")
                     navController.navigate("home/$username") {
                         popUpTo("home/$username") { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 modifier = Modifier
@@ -86,8 +89,6 @@ fun FilterScreen(navController: NavController, username: String) {
             ) {
                 Text(text = "Remove Filter", fontWeight = FontWeight.Bold)
             }
-
-
         }
     }
 }
