@@ -142,6 +142,16 @@ fun HomeScreen(
                     shape = RoundedCornerShape(10.dp)
                 )
 
+                // Numero di manga trovati
+                Text(
+                    text = "Found ${mangaList.size} manga(s)",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(
