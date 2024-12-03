@@ -161,7 +161,6 @@ fun UserProfileScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Profile Image
-                        // Profile Image
                         Image(
                             painter = if (profilePictureUri != null) {
                                 rememberAsyncImagePainter(profilePictureUri)
@@ -171,11 +170,10 @@ fun UserProfileScreen(
                             contentDescription = "Immagine del profilo",
                             modifier = Modifier
                                 .fillMaxWidth() // Per far sì che l'immagine sia larga quanto la card
-                                .height(200.dp) // Imposta un'altezza fissa per l'immagine
+                                .height(150.dp) // Imposta un'altezza fissa per l'immagine
                                 .clip(MaterialTheme.shapes.medium) // Usa angoli arrotondati
                                 .clickable { showDialog = true }
                         )
-
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -199,31 +197,38 @@ fun UserProfileScreen(
                             text = "Posizione: $location",
                             style = MaterialTheme.typography.bodyMedium
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Update Location Button
+                        Button(
+                            onClick = {
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                                    == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    fetchLocation(context, userRepository, username) { newLocation ->
+                                        location = newLocation // Aggiorna la UI
+                                    }
+                                } else {
+                                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Aggiorna Posizione")
+                        }
                     }
                 }
 
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Update Location Button
-                Button(
-                    onClick = {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED
-                        ) {
-                            fetchLocation(context, userRepository, username) { newLocation ->
-                                location = newLocation // Aggiorna la UI
-                            }
-                        } else {
-                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        }
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    Text("Aggiorna Posizione")
-                }
+                // Grafico delle categorie di manga
+                GraficoCategorieManga(
+                    mangaRepository = mangaRepository,
+                    username = username
+                )
             }
         }
     )

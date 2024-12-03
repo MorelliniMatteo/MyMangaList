@@ -112,4 +112,6 @@ dependencies {
     implementation(kotlin("script-runtime"))
 
     implementation("io.coil-kt:coil-compose:2.0.0")
+
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
