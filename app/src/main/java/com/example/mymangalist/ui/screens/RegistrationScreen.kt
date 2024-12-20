@@ -44,6 +44,22 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
+    // Funzione per creare il canale di notifica
+    fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "welcome_channel"
+            val name = "Registration Notifications"
+            val descriptionText = "Channel for registration success notifications"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
     // Funzione per inviare la notifica di benvenuto con controllo permessi
     fun sendWelcomeNotification() {
         val channelId = "welcome_channel"
@@ -60,11 +76,13 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
             }
         }
 
-        // Invia la notifica
+        createNotificationChannel()
+
+        // Crea e invia la notifica
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Welcome to MyMangaList!")
-            .setContentText("Your account has been successfully created, $username.")
+            .setSmallIcon(R.drawable.logo)
+            .setContentTitle("Registrazione avvenuta con successo")
+            .setContentText("Benvenuto, $username! Grazie per esserti unito a MyMangaList.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         with(NotificationManagerCompat.from(context)) {

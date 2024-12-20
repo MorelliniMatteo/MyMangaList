@@ -33,13 +33,11 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
 import android.location.Geocoder
 import java.util.Locale
 
 @Composable
 fun LoginScreen(navController: NavController, userRepository: UserRepositoryInterface) {
-    // Inizializzazione delle variabili di contesto e localizzazione
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val scope = rememberCoroutineScope()
@@ -49,52 +47,61 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
     var loginError by remember { mutableStateOf("") }
     var location: Location? by remember { mutableStateOf(null) }
 
-    fun createNotificationChannel() { /* Canale di notifica */ }
+    fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Login Notifications"
+            val descriptionText = "Channel for login notifications"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("login_channel", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
-    // Funzione per ottenere la città usando Geocoder
     fun getCityFromLocation(location: Location?): String? {
         location ?: return null
         return try {
             val geocoder = Geocoder(context, Locale.getDefault())
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-            addresses?.get(0)?.locality // Ottiene la città dall'indirizzo
+            addresses?.get(0)?.locality
         } catch (e: Exception) {
             null
         }
     }
 
-    // Funzione per inviare la notifica di accesso
     fun sendLoginNotification(username: String, location: Location?) {
         val city = getCityFromLocation(location)
         val locationText = if (city != null) {
-            "from $city (${location?.latitude}, ${location?.longitude})"
+            "Login avvenuto con successo da $city (${location?.latitude}, ${location?.longitude})"
         } else {
-            "from ${location?.latitude}, ${location?.longitude}"
+            "Login avvenuto con successo da coordinate (${location?.latitude}, ${location?.longitude})"
         }
 
-        // Controllo del permesso di invio notifiche
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1003)
             return
         }
 
+        createNotificationChannel()
+
         val builder = NotificationCompat.Builder(context, "login_channel")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("New Login Detected")
-            .setContentText("New login to profile: $username, $locationText.")
+            .setSmallIcon(R.drawable.logo)
+            .setContentTitle("Login avvenuto con successo")
+            .setContentText(locationText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(locationText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        // Blocca la chiamata in un try-catch per gestire possibili SecurityException
         try {
             NotificationManagerCompat.from(context).notify(2, builder.build())
         } catch (e: SecurityException) {
             e.printStackTrace()
-            // Eventualmente, mostra un messaggio di errore all'utente
             Toast.makeText(context, "Notification permission is required to send login notifications", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Funzione per gestire il login
     fun loginUser(location: Location?) {
         if (username.isEmpty() || password.isEmpty()) {
             loginError = "All fields must be filled"
@@ -110,7 +117,7 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
                                 Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
                                 sendLoginNotification(username, location)
                                 navController.navigate("home/${username}") {
-                                    popUpTo("login") { inclusive = true } // Rimuovi la schermata di login
+                                    popUpTo("login") { inclusive = true }
                                 }
                             }
                             is LoginResult.InvalidCredentials -> {
@@ -129,7 +136,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         })
     }
 
-    // Funzione per ottenere la posizione corrente e gestire il login
     fun getLocationAndLogin() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -147,7 +153,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         }
     }
 
-    // UI Composable
     Column(
         modifier = Modifier
             .fillMaxSize()
