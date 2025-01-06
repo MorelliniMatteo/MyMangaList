@@ -20,6 +20,7 @@ import com.example.mymangalist.data.MangaRepository
 fun MangaCard(
     manga: Manga,
     onDetailsClick: (Manga) -> Unit,
+    onDeleteClick: (Manga) -> Unit,
     modifier: Modifier = Modifier,
     mangaRepository: MangaRepository,
     userId: String
@@ -34,58 +35,71 @@ fun MangaCard(
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
-            // Immagine del Manga
-            val imagePainter = rememberAsyncImagePainter(
-                model = manga.imageUrl.takeIf { it.isNotEmpty() }
-                    ?: R.drawable.manga_default // Fallback all'immagine predefinita
-            )
-            Image(
-                painter = imagePainter,
-                contentDescription = "Manga Image",
-                modifier = Modifier
-                    .size(80.dp)
-                    .padding(end = 16.dp)
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.padding(16.dp)) {
+                val imagePainter = rememberAsyncImagePainter(
+                    model = manga.imageUrl.takeIf { it.isNotEmpty() }
+                        ?: R.drawable.manga_default
+                )
+                Image(
+                    painter = imagePainter,
+                    contentDescription = "Manga Image",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(end = 16.dp)
+                )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(
-                    text = manga.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Categoria: ${manga.category}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.CenterVertically)
                 ) {
-                    Button(onClick = { onDetailsClick(manga) }) {
-                        Text("Vedi dettagli")
-                    }
-                    Icon(
-                        painter = painterResource(
-                            id = if (isStarred) R.drawable.ic_favorite_filled else R.drawable.ic_favorite
-                        ),
-                        contentDescription = if (isStarred) "Favourite filled" else "Favourite",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                val newState = !isStarred
-                                isStarred = newState
-                                mangaRepository.updateFavouriteStatus(manga.id, userId, newState)
-                            }
+                    Text(
+                        text = manga.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
-
+                    Text(
+                        text = "Categoria: ${manga.category}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(onClick = { onDetailsClick(manga) }) {
+                            Text("Vedi dettagli")
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    id = if (isStarred) R.drawable.ic_favorite_filled else R.drawable.ic_favorite
+                                ),
+                                contentDescription = if (isStarred) "Favourite filled" else "Favourite",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        val newState = !isStarred
+                                        isStarred = newState
+                                        mangaRepository.updateFavouriteStatus(manga.id, userId, newState)
+                                    }
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_cestino),
+                                contentDescription = "Delete",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable { onDeleteClick(manga) },
+                                tint = Color.Red
+                            )
+                        }
+                    }
                 }
             }
         }

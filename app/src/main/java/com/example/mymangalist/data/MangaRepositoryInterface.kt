@@ -16,4 +16,7 @@ interface MangaRepositoryInterface {
 
     // Nuova funzione per ottenere i manga preferiti di un utente
     fun getFavouriteMangasByUser(userId: String, callback: UserRepositoryInterface.Callback<List<Manga>>)
+
+    fun deleteManga(mangaId: String, callback: UserRepositoryInterface.Callback<Boolean>)
+
 }

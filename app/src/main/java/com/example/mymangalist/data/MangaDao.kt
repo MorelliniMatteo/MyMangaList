@@ -35,4 +35,8 @@ interface MangaDAO {
 
     @Query("SELECT * FROM mangas WHERE userId = :userId AND title LIKE :query || '%' ORDER BY insertedDate DESC")
     fun searchByTitle(userId: String, query: String): List<Manga>
+
+    @Query("DELETE FROM mangas WHERE id = :mangaId")
+    fun deleteManga(mangaId: String)
+
 }

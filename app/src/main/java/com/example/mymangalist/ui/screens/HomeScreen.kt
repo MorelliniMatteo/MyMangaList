@@ -164,11 +164,19 @@ fun HomeScreen(
                         MangaCard(
                             manga = manga,
                             onDetailsClick = { selectedManga -> onMangaClick(selectedManga) },
+                            onDeleteClick = { deletedManga ->
+                                mangaRepository.deleteManga(deletedManga.id.toString(), object : UserRepositoryInterface.Callback<Boolean> {
+                                    override fun onResult(result: Boolean) {
+                                        if (result) updateMangaList() // Aggiorna la lista dopo l'eliminazione
+                                    }
+                                })
+                            },
                             mangaRepository = mangaRepository,
                             userId = userId
                         )
                     }
                 }
+
             }
         }
     )

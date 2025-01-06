@@ -82,4 +82,15 @@ class MangaRepository(application: Application) : MangaRepositoryInterface {
             }
         }
     }
+
+    override fun deleteManga(mangaId: String, callback: UserRepositoryInterface.Callback<Boolean>)
+    {
+        CoroutineScope(Dispatchers.IO).launch {
+            mangaDAO.deleteManga(mangaId)
+            withContext(Dispatchers.Main) {
+                callback.onResult(true) // Operazione completata con successo
+            }
+        }
+    }
+
 }
