@@ -53,7 +53,8 @@ fun HomeScreen(
                 showFavorites -> {
                     mangaRepository.getFavouriteMangasByUser(userId, object : UserRepositoryInterface.Callback<List<Manga>> {
                         override fun onResult(result: List<Manga>) {
-                            mangaList = result.sortedByDescending { it.insertedDate }
+                            mangaList = result.filter { it.category.equals(selectedFilter, ignoreCase = true) || selectedFilter.isEmpty() }
+                                .sortedByDescending { it.insertedDate }
                         }
                     })
                 }
@@ -138,13 +139,13 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    placeholder = { Text("Search manga...") },
+                    placeholder = { Text("Cerca manga...") },
                     shape = RoundedCornerShape(10.dp)
                 )
 
                 // Numero di manga trovati
                 Text(
-                    text = "Found ${mangaList.size} manga(s)",
+                    text = "Trovati ${mangaList.size} manga(s)",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),

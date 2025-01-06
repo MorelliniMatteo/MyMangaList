@@ -87,7 +87,7 @@ fun FilterScreen(navController: NavController, username: String) {
                     .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text(text = "Remove Filter", fontWeight = FontWeight.Bold)
+                Text(text = "Rimuovi Filtro", fontWeight = FontWeight.Bold)
             }
         }
     }

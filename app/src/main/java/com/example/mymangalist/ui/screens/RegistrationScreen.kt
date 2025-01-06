@@ -93,28 +93,28 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
     // Funzione per gestire la registrazione
     fun registerUser() {
         if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            Toast.makeText(context, "All fields must be filled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Tutti i campi devono essere riempiti", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (password != confirmPassword) {
-            Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Le password non coincidono", Toast.LENGTH_SHORT).show()
             return
         }
 
         userRepository.isUsernameTaken(username, object : UserRepositoryInterface.Callback<Boolean> {
             override fun onResult(isTaken: Boolean) {
                 if (isTaken) {
-                    Toast.makeText(context, "Username already taken", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Username giá in uso", Toast.LENGTH_SHORT).show()
                 } else {
                     userRepository.isEmailTaken(email, object : UserRepositoryInterface.Callback<Boolean> {
                         override fun onResult(isTaken: Boolean) {
                             if (isTaken) {
-                                Toast.makeText(context, "Email already taken", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Email giá in uso", Toast.LENGTH_SHORT).show()
                             } else {
                                 val newUser = User(username, email, password)
                                 userRepository.registerUser(newUser)
-                                Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Registrazione avvenuta con successo", Toast.LENGTH_SHORT).show()
 
                                 // Invia la notifica di benvenuto
                                 sendWelcomeNotification()
@@ -145,7 +145,7 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Register to MyMangaList", style = MaterialTheme.typography.headlineSmall)
+        Text(text = "Registrati a MyMangaList", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -181,7 +181,7 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
+            label = { Text("Conferma Password") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
@@ -198,7 +198,7 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Do you already have an account? Sign in",
+            text = "Possiedi giá un account? Esegui il login qui",
             color = Color.Blue,
             modifier = Modifier
                 .clickable {

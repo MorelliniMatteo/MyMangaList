@@ -93,12 +93,30 @@ fun AddScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Manga") },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aggiungi Manga",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(painter = painterResource(id = R.drawable.ic_back), contentDescription = "Back")
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         bottomBar = {
@@ -124,14 +142,14 @@ fun AddScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title") },
+                label = { Text("Titolo") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = date,
                 onValueChange = { },
-                label = { Text("Date") },
+                label = { Text("Data") },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker(context) { newDate -> date = newDate } }) {
@@ -151,7 +169,7 @@ fun AddScreen(
                         price = newPrice
                     }
                 },
-                label = { Text("Price") },
+                label = { Text("Prezzo") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -165,7 +183,7 @@ fun AddScreen(
                 OutlinedTextField(
                     value = category,
                     onValueChange = { },
-                    label = { Text("Select Category") },
+                    label = { Text("Seleziona categoria") },
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.textFieldColors(),
@@ -203,7 +221,7 @@ fun AddScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description") },
+                label = { Text("Descrizione") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -211,7 +229,7 @@ fun AddScreen(
             OutlinedTextField(
                 value = purchaseLocation,
                 onValueChange = { purchaseLocation = it },
-                label = { Text("Purchase Location") },
+                label = { Text("Luogo dell'acquisto") },
                 trailingIcon = {
                     IconButton(onClick = {
                         // Check for permission before fetching location
@@ -236,7 +254,7 @@ fun AddScreen(
             Button(
                 onClick = {
                     if (title.isBlank() || price.isBlank() || date.isBlank() || category == "-") {
-                        errorMessage = "All fields except image URL are required."
+                        errorMessage = "Tutti i campi eccetto la URL dell'immagine sono richiesti."
                         return@Button
                     }
 
@@ -262,13 +280,13 @@ fun AddScreen(
                             mangaRepository.addManga(manga)
                             onMangaAdded()
                         } catch (e: Exception) {
-                            errorMessage = "Error saving manga. Please try again."
+                            errorMessage = "Errore. Prova di nuovo."
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Add Manga")
+                Text("Aggiungi Manga")
             }
         }
     }

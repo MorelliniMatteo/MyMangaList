@@ -4,6 +4,7 @@ import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -70,11 +71,16 @@ fun GraficoCategorieManga(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Distribuzione Manga per Categoria",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Distribuzione Manga per Categoria",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Box(
                 modifier = Modifier
