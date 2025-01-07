@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -37,35 +38,45 @@ import android.location.Geocoder
 import androidx.activity.result.contract.ActivityResultContracts
 import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.core.content.ContextCompat
 
 @Composable
 fun LoginScreen(navController: NavController, userRepository: UserRepositoryInterface) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val scope = rememberCoroutineScope()
+    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", MODE_PRIVATE) } // memorizza sharedprefs
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loginError by remember { mutableStateOf("") }
     var location: Location? by remember { mutableStateOf(null) }
 
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        var hasNotificationPermission = isGranted
+    var hasShownNotificationRequest by remember {
+        mutableStateOf(sharedPrefs.getBoolean("notification_permission_requested", false))
+    }
+
+    var hasShownLocationRequest by remember {
+        mutableStateOf(sharedPrefs.getBoolean("location_permission_requested", false))
     }
 
     var hasNotificationPermission by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             } else {
                 true
             }
         )
+    }
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasNotificationPermission = isGranted
+        if (!isGranted) {
+            Toast.makeText(context, "Permesso per le notifiche non concesso", Toast.LENGTH_SHORT).show()
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -76,9 +87,25 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             val channel = NotificationChannel("login_channel", name, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager: NotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notificationPermissionGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!notificationPermissionGranted && sharedPrefs.getBoolean("notification_permission_requested", false)) {
+                Toast.makeText(
+                    context,
+                    "Le notifiche sono disabilitate. Abilitale dalle impostazioni per ricevere aggiornamenti.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
@@ -95,8 +122,13 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
 
     fun requestNotificationPermission(onPermissionGranted: () -> Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!hasNotificationPermission) {
+            if (!hasNotificationPermission && !hasShownNotificationRequest) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, Manifest.permission.POST_NOTIFICATIONS)) {
+                    Toast.makeText(context, "L'app necessita del permesso per inviare notifiche", Toast.LENGTH_SHORT).show()
+                }
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                sharedPrefs.edit().putBoolean("notification_permission_requested", true).apply()
+                hasShownNotificationRequest = true
             } else {
                 onPermissionGranted()
             }
@@ -105,21 +137,24 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         }
     }
 
+
     fun sendLoginNotification(username: String, location: Location?) {
-        if (!hasNotificationPermission) {
-            return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!hasNotificationPermission) {
+                return
+            }
         }
 
         val city = getCityFromLocation(location)
         val locationText = if (city != null) {
-            "Login avvenuto con successo da $city (${location?.latitude}, ${location?.longitude})"
+            "Login da $city (${location?.latitude}, ${location?.longitude})"
         } else {
-            "Login avvenuto con successo da coordinate (${location?.latitude}, ${location?.longitude})"
+            "Login da coordinate (${location?.latitude}, ${location?.longitude})"
         }
 
         val builder = NotificationCompat.Builder(context, "login_channel")
             .setSmallIcon(R.drawable.logo)
-            .setContentTitle("Login avvenuto con successo")
+            .setContentTitle("Login avvenuto")
             .setContentText(locationText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(locationText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -129,13 +164,26 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             NotificationManagerCompat.from(context).notify(2, builder.build())
         } catch (e: SecurityException) {
             e.printStackTrace()
-            Toast.makeText(context, "Errore nell'invio della notifica", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Errore notifica", Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun loginUser(location: Location?) {
+    val requestLocationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            fusedLocationClient.lastLocation.addOnCompleteListener { task ->
+                location = if (task.isSuccessful && task.result != null) task.result else null
+                sendLoginNotification(username, location)
+            }
+        } else {
+            Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun loginUser() {
         if (username.isEmpty() || password.isEmpty()) {
-            loginError = "Tutti i campi devono essere riempiti"
+            loginError = "Campi vuoti"
             return
         }
 
@@ -145,16 +193,30 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
                     withContext(Dispatchers.Main) {
                         when (result) {
                             is LoginResult.Success -> {
-                                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Login riuscito", Toast.LENGTH_SHORT).show()
                                 requestNotificationPermission {
-                                    sendLoginNotification(username, location)
+                                    if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                                        != PackageManager.PERMISSION_GRANTED && !hasShownLocationRequest) {
+                                        if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity,
+                                                Manifest.permission.ACCESS_FINE_LOCATION)) {
+                                            Toast.makeText(context, "Posizione necessaria", Toast.LENGTH_SHORT).show()
+                                        }
+                                        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        sharedPrefs.edit().putBoolean("location_permission_requested", true).apply()
+                                        hasShownLocationRequest = true
+                                    } else {
+                                        fusedLocationClient.lastLocation.addOnCompleteListener { task ->
+                                            location = if (task.isSuccessful && task.result != null) task.result else null
+                                            sendLoginNotification(username, location)
+                                        }
+                                    }
                                 }
                                 navController.navigate("home/${username}") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
                             is LoginResult.InvalidCredentials -> {
-                                loginError = "Username o Password errati"
+                                loginError = "Credenziali errate"
                             }
                             is LoginResult.UserNotFound -> {
                                 loginError = "Utente non trovato"
@@ -167,53 +229,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
                 }
             }
         })
-
-
-    }
-
-    fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Login Notifications"
-            val descriptionText = "Channel for login notifications"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel("login_channel", name, importance).apply {
-                description = descriptionText
-            }
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    fun getLocationAndLogin() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(context as Activity,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                1002
-            )
-            return
-        }
-
-        fusedLocationClient.lastLocation.addOnCompleteListener { task ->
-            location = if (task.isSuccessful && task.result != null) task.result else null
-            loginUser(location)
-        }
-    }
-
-    DisposableEffect(context) {
-        val activity = context as Activity
-        val permissionCallback = { requestCode: Int, permissions: Array<String>, grantResults: IntArray ->
-            if (requestCode == 1003) {
-                hasNotificationPermission = grantResults.isNotEmpty() &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED
-            }
-        }
-
-        onDispose {
-            // Cleanup if needed
-        }
     }
 
     Column(
@@ -259,7 +274,7 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { getLocationAndLogin() },
+            onClick = { loginUser() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("LOGIN")
@@ -268,7 +283,7 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Non hai un account? Registrati cliccando qui",
+            text = "Non hai un account? Registrati qui",
             color = Color.Blue,
             modifier = Modifier
                 .clickable {
@@ -277,5 +292,3 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         )
     }
 }
-
-
