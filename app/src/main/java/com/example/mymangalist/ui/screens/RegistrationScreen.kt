@@ -1,5 +1,3 @@
-package com.example.mymangalist.ui.screens
-
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,28 +30,47 @@ import androidx.navigation.NavController
 import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import android.content.Context.MODE_PRIVATE
 
 @Composable
 fun RegistrationScreen(navController: NavController, userRepository: UserRepositoryInterface) {
     val context = LocalContext.current
-
-    // State per i campi di input
+    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", MODE_PRIVATE) }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    // Funzione per creare il canale di notifica
+    var hasShownNotificationRequest by remember {
+        mutableStateOf(sharedPrefs.getBoolean("notification_permission_requested", false))
+    }
+
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasNotificationPermission = isGranted
+        if (!isGranted) {
+            Toast.makeText(context, "Permesso notifiche negato", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
     fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "welcome_channel"
-            val name = "Registration Notifications"
-            val descriptionText = "Channel for registration success notifications"
+            val name = "Registrazione notifiche"
+            val descriptionText = "Canale notifiche di registrazione"
             val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelId, name, importance).apply {
+            val channel = NotificationChannel("welcome_channel", name, importance).apply {
                 description = descriptionText
             }
             val notificationManager: NotificationManager =
@@ -60,37 +79,22 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
         }
     }
 
-    // Funzione per inviare la notifica di benvenuto con controllo permessi
-    fun sendWelcomeNotification() {
-        val channelId = "welcome_channel"
-
-        // Verifica se l'app ha il permesso di inviare notifiche
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                // Richiedi il permesso
-                if (context is ComponentActivity) {
-                    ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
-                }
-                return
-            }
+    fun sendWelcomeNotification(username: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+            return
         }
 
         createNotificationChannel()
 
-        // Crea e invia la notifica
-        val builder = NotificationCompat.Builder(context, channelId)
+        val builder = NotificationCompat.Builder(context, "welcome_channel")
             .setSmallIcon(R.drawable.logo)
-            .setContentTitle("Registrazione avvenuta con successo")
-            .setContentText("Benvenuto, $username! Grazie per esserti unito a MyMangaList.")
+            .setContentTitle("Registrazione riuscita")
+            .setContentText("Ciao $username, benvenuto in MyMangaList!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        with(NotificationManagerCompat.from(context)) {
-            notify(1, builder.build())
-        }
+        NotificationManagerCompat.from(context).notify(1, builder.build())
     }
 
-    // Funzione per gestire la registrazione
     fun registerUser() {
         if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             Toast.makeText(context, "Tutti i campi devono essere riempiti", Toast.LENGTH_SHORT).show()
@@ -105,22 +109,33 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
         userRepository.isUsernameTaken(username, object : UserRepositoryInterface.Callback<Boolean> {
             override fun onResult(isTaken: Boolean) {
                 if (isTaken) {
-                    Toast.makeText(context, "Username giá in uso", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Username già in uso", Toast.LENGTH_SHORT).show()
                 } else {
                     userRepository.isEmailTaken(email, object : UserRepositoryInterface.Callback<Boolean> {
                         override fun onResult(isTaken: Boolean) {
                             if (isTaken) {
-                                Toast.makeText(context, "Email giá in uso", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Email già in uso", Toast.LENGTH_SHORT).show()
                             } else {
                                 val newUser = User(username, email, password)
                                 userRepository.registerUser(newUser)
                                 Toast.makeText(context, "Registrazione avvenuta con successo", Toast.LENGTH_SHORT).show()
 
-                                // Invia la notifica di benvenuto
-                                sendWelcomeNotification()
-
-                                // Naviga alla schermata home
-                                navController.navigate("home/${newUser.username}") // Passa il nome utente
+                                // Richiesta del permesso e invio della notifica *solo se il permesso è concesso*
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    if (!hasNotificationPermission && !hasShownNotificationRequest) {
+                                        if(ActivityCompat.shouldShowRequestPermissionRationale(context as ComponentActivity, Manifest.permission.POST_NOTIFICATIONS)){
+                                            Toast.makeText(context, "Permesso notifiche necessario", Toast.LENGTH_SHORT).show()
+                                        }
+                                        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        sharedPrefs.edit().putBoolean("notification_permission_requested", true).apply()
+                                        hasShownNotificationRequest = true
+                                    } else {
+                                        sendWelcomeNotification(username)
+                                    }
+                                } else {
+                                    sendWelcomeNotification(username)
+                                }
+                                navController.navigate("home/${newUser.username}")
                             }
                         }
                     })
@@ -192,7 +207,7 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
             onClick = { registerUser() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("REGISTER")
+            Text("REGISTRATI")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

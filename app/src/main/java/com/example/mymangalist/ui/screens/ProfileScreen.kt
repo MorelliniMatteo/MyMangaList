@@ -53,16 +53,26 @@ fun UserProfileScreen(
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
+    var hasShownLocationRequest by remember {
+        mutableStateOf(context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+            .getBoolean("location_permission_requested", false))
+    }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             fetchLocation(context, userRepository, username) { newLocation ->
-                location = newLocation // Aggiorna la UI con la nuova posizione
+                location = newLocation
             }
         } else {
             Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
         }
+        // Salva che il permesso è stato richiesto
+        context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("location_permission_requested", true)
+            .apply()
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -207,10 +217,13 @@ fun UserProfileScreen(
                                     == PackageManager.PERMISSION_GRANTED
                                 ) {
                                     fetchLocation(context, userRepository, username) { newLocation ->
-                                        location = newLocation // Aggiorna la UI
+                                        location = newLocation
                                     }
-                                } else {
+                                } else if (!hasShownLocationRequest) {
                                     locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                    hasShownLocationRequest = true
+                                } else {
+                                    Toast.makeText(context, "Permesso posizione necessario. Abilitalo dalle impostazioni.", Toast.LENGTH_LONG).show()
                                 }
                             },
                             shape = MaterialTheme.shapes.medium,

@@ -58,6 +58,11 @@ fun AddScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    var hasShownLocationRequest by remember {
+        mutableStateOf(context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+            .getBoolean("location_permission_requested", false))
+    }
+
     val categories = listOf("Action", "Adventure", "Comedy", "Fantasy", "Romance", "Horror")
 
     // Location permission launcher
@@ -71,6 +76,11 @@ fun AddScreen(
         } else {
             Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
         }
+        // Salva che il permesso è stato richiesto
+        context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("location_permission_requested", true)
+            .apply()
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -232,14 +242,21 @@ fun AddScreen(
                 label = { Text("Luogo dell'acquisto") },
                 trailingIcon = {
                     IconButton(onClick = {
-                        // Check for permission before fetching location
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PermissionChecker.PERMISSION_GRANTED) {
+                            == PermissionChecker.PERMISSION_GRANTED
+                        ) {
                             fetchLocation(context) { newLocation ->
                                 purchaseLocation = newLocation
                             }
-                        } else {
+                        } else if (!hasShownLocationRequest) {
                             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                            hasShownLocationRequest = true
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Permesso posizione necessario. Abilitalo dalle impostazioni.",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }) {
                         Icon(
@@ -328,7 +345,7 @@ private fun fetchLocation(
                 val city = addresses?.firstOrNull()?.locality ?: "Unknown"
                 val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
                 onLocationUpdated(newLocation)
-                Toast.makeText(context, "Location updated", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Posizione inserita", Toast.LENGTH_SHORT).show()
             } ?: Toast.makeText(context, "Unable to get location", Toast.LENGTH_SHORT).show()
         }
     } catch (e: SecurityException) {
