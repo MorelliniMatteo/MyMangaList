@@ -10,9 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.data.UserRepository
 import com.example.mymangalist.ui.components.ThemeManager
@@ -199,6 +201,29 @@ fun MyMangaListApp(
                     username = username,
                     isDarkTheme = isDarkTheme,
                     onThemeToggle = onThemeChange
+                )
+            }
+        }
+
+        composable(
+            route = "home/{username}/{filter}",
+            arguments = listOf(
+                navArgument("username") { type = NavType.StringType },
+                navArgument("filter") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "unknown"
+            val filter = backStackEntry.arguments?.getString("filter") ?: ""
+            MyMangaListTheme(darkTheme = isDarkTheme) {
+                HomeScreen(
+                    navController = navController,
+                    userRepository = userRepository,
+                    mangaRepository = mangaRepository,
+                    username = username,
+                    filter = filter,
+                    onMangaClick = { manga ->
+                        navController.navigate("details/${manga.id}/$username")
+                    }
                 )
             }
         }

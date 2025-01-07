@@ -35,7 +35,14 @@ import com.example.mymangalist.ui.components.MyMangaBottomBar
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import com.example.mymangalist.utils.saveBitmapAsUri
+import java.io.File
 import java.util.Locale
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,40 +55,23 @@ fun UserProfileScreen(
 ) {
     var user by remember { mutableStateOf<User?>(null) }
     var mangaCount by remember { mutableStateOf(0) }
-    var profilePictureUri by remember { mutableStateOf<String?>(null) }
+    var profilePictureUri by remember { mutableStateOf<Uri?>(null) }
     var location by remember { mutableStateOf("Non impostata") }
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    var hasShownLocationRequest by remember {
-        mutableStateOf(context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
-            .getBoolean("location_permission_requested", false))
-    }
-
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            fetchLocation(context, userRepository, username) { newLocation ->
-                location = newLocation
-            }
-        } else {
-            Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
-        }
-        // Salva che il permesso è stato richiesto
-        context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("location_permission_requested", true)
-            .apply()
-    }
+    var totalMangaCount by remember { mutableStateOf(0) }
+    var userMangaCount by remember { mutableStateOf(0) }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
             uri?.let {
-                profilePictureUri = it.toString()
+                // Crea una copia permanente dell'immagine nella directory dell'app
+                val permanentUri = copyImageToAppStorage(context, it)
+                profilePictureUri = permanentUri
                 coroutineScope.launch {
-                    userRepository.updateProfilePicture(username, it.toString())
+                    userRepository.updateProfilePicture(username, permanentUri.toString())
                 }
             }
         }
@@ -93,9 +83,10 @@ fun UserProfileScreen(
             bitmap?.let {
                 val savedUri = saveBitmapAsUri(context, it)
                 savedUri?.let { uri ->
-                    profilePictureUri = uri.toString()
+                    val permanentUri = copyImageToAppStorage(context, uri)
+                    profilePictureUri = permanentUri
                     coroutineScope.launch {
-                        userRepository.updateProfilePicture(username, uri.toString())
+                        userRepository.updateProfilePicture(username, permanentUri.toString())
                     }
                 }
             }
@@ -106,7 +97,13 @@ fun UserProfileScreen(
         userRepository.getUserByUsername(username, object : UserRepositoryInterface.Callback<User?> {
             override fun onResult(result: User?) {
                 user = result
-                profilePictureUri = result?.profilePictureUri
+                result?.profilePictureUri?.let { uriString ->
+                    try {
+                        profilePictureUri = Uri.parse(uriString)
+                    } catch (e: Exception) {
+                        // Gestione errore parsing URI
+                    }
+                }
                 location = result?.location ?: "Non impostata"
             }
         })
@@ -165,6 +162,7 @@ fun UserProfileScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
@@ -217,30 +215,20 @@ fun UserProfileScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
-                            onClick = {
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                                    == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    fetchLocation(context, userRepository, username) { newLocation ->
-                                        location = newLocation
-                                    }
-                                } else if (!hasShownLocationRequest) {
-                                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                                    hasShownLocationRequest = true
-                                } else {
-                                    Toast.makeText(context, "Permesso posizione necessario. Abilitalo dalle impostazioni.", Toast.LENGTH_LONG).show()
-                                }
-                            },
+                            onClick = { /* Implementa aggiornamento posizione */ },
                             shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Aggiorna Posizione")
                         }
+
+
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Grafico delle categorie di manga
                 GraficoCategorieManga(
                     mangaRepository = mangaRepository,
                     username = username
@@ -296,29 +284,16 @@ fun showImageSelectionDialog(
     )
 }
 
-fun fetchLocation(
-    context: Context,
-    userRepository: UserRepository,
-    username: String,
-    onLocationUpdated: (String) -> Unit
-) {
-    if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-        == PackageManager.PERMISSION_GRANTED
-    ) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-                val city = addresses?.firstOrNull()?.locality ?: "Posizione sconosciuta"
-                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
+fun copyImageToAppStorage(context: Context, uri: Uri): Uri {
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val fileName = "profile_${System.currentTimeMillis()}.jpg"
+    val outputFile = File(context.filesDir, fileName)
 
-                userRepository.updateLocation(username, newLocation)
-                onLocationUpdated(newLocation)
-                Toast.makeText(context, "Posizione aggiornata", Toast.LENGTH_SHORT).show()
-            } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
+    inputStream?.use { input ->
+        outputFile.outputStream().use { output ->
+            input.copyTo(output)
         }
-    } else {
-        Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
     }
+
+    return Uri.fromFile(outputFile)
 }

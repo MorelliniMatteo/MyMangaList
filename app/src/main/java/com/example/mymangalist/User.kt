@@ -11,7 +11,7 @@ import androidx.room.Index
 )
 data class User(
     val username: String, // PrimaryKey univoca
-    val email: String,    // Email univoca
+    val email: String,
     val password: String,
     val profilePictureUri: String? = null, // Uri della foto profilo
     val location: String? = null           // Posizione dell'utente

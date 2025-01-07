@@ -58,7 +58,9 @@ fun LeaderboardScreen(
 
                             // Quando abbiamo tutti i risultati, ordiniamo e aggiorniamo la UI
                             if (completedCount == userList.size) {
-                                users = tempResults.sortedByDescending { it.second }
+                                // Ordina prima per numero di manga (decrescente), poi per nome (in caso di parità)
+                                users = tempResults.sortedWith(compareByDescending<Pair<User, Int>> { it.second }
+                                    .thenBy { it.first.username })
                                 isLoading = false
                             }
                         }
@@ -117,12 +119,22 @@ fun LeaderboardScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    var previousCount: Int? = null
+                    var rank = 1 // Iniziamo la classifica da 1
+
                     itemsIndexed(users) { index, (user, count) ->
+                        // Se il numero di manga è diverso rispetto al precedente, aggiorniamo la posizione
+                        if (previousCount == null || previousCount != count) {
+                            rank = index + 1 // Nuova posizione se il conteggio dei manga è diverso
+                        }
+
                         LeaderboardItem(
-                            position = index + 1,
+                            position = rank,
                             user = user,
                             mangaCount = count
                         )
+
+                        previousCount = count // Salviamo l'ultimo conteggio per il confronto
                     }
                 }
             }
