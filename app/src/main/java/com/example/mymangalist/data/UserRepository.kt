@@ -39,7 +39,6 @@ class UserRepository(application: Application) : UserRepositoryInterface {
         }
     }
 
-    // Assicurati che anche getUserByUsername utilizzi coroutine
     override fun getUserByUsername(username: String, callback: UserRepositoryInterface.Callback<User?>) {
         CoroutineScope(Dispatchers.IO).launch {
             val user = userDAO.getUserByUsername(username)
@@ -49,25 +48,23 @@ class UserRepository(application: Application) : UserRepositoryInterface {
         }
     }
 
-    // Metodo per aggiornare la foto del profilo
     fun updateProfilePicture(username: String, pictureUri: String) {
         CoroutineScope(Dispatchers.IO).launch {
             userDAO.updateProfilePicture(username, pictureUri)
         }
     }
 
-    // Metodo per aggiornare la posizione
     fun updateLocation(username: String, location: String) {
         CoroutineScope(Dispatchers.IO).launch {
             userDAO.updateLocation(username, location)
         }
     }
 
-    fun getUser(username: String, callback: UserRepositoryInterface.Callback<User?>) {
+    fun getAllUsers(callback: UserRepositoryInterface.Callback<List<User>>) {
         CoroutineScope(Dispatchers.IO).launch {
-            val user = userDAO.getUserByUsername(username) // Supponendo che questa funzione ritorni User?
+            val users = userDAO.getAllUsers()
             withContext(Dispatchers.Main) {
-                callback.onResult(user)
+                callback.onResult(users)
             }
         }
     }
@@ -79,14 +76,9 @@ class UserRepository(application: Application) : UserRepositoryInterface {
                 if (user != null) {
                     callback.onResult(LoginResult.Success(user))
                 } else {
-                    // Puoi anche implementare controlli per InvalidCredentials o UserNotFound
-                    callback.onResult(LoginResult.InvalidCredentials) // o LoginResult.UserNotFound
+                    callback.onResult(LoginResult.InvalidCredentials)
                 }
             }
         }
     }
-
-
-
 }
-

@@ -58,7 +58,7 @@ fun UserProfileScreen(
     ) { isGranted ->
         if (isGranted) {
             fetchLocation(context, userRepository, username) { newLocation ->
-                location = newLocation // Aggiorna la UI con la nuova posizione
+                location = newLocation
             }
         } else {
             Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
@@ -113,8 +113,8 @@ fun UserProfileScreen(
             TopAppBar(
                 title = {
                     Row(
-                        modifier = Modifier.fillMaxWidth(), // Per far sì che occupi tutta la larghezza disponibile
-                        horizontalArrangement = Arrangement.Center // Per centrare il contenuto
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = "Profilo Utente",
@@ -128,6 +128,15 @@ fun UserProfileScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back),
                             contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate("leaderboard_screen/$username") }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_classifica),
+                            contentDescription = "Classifica",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -146,7 +155,6 @@ fun UserProfileScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // User Profile Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
@@ -160,7 +168,6 @@ fun UserProfileScreen(
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Profile Image
                         Image(
                             painter = if (profilePictureUri != null) {
                                 rememberAsyncImagePainter(profilePictureUri)
@@ -169,15 +176,14 @@ fun UserProfileScreen(
                             },
                             contentDescription = "Immagine del profilo",
                             modifier = Modifier
-                                .fillMaxWidth() // Per far sì che l'immagine sia larga quanto la card
-                                .height(150.dp) // Imposta un'altezza fissa per l'immagine
-                                .clip(MaterialTheme.shapes.medium) // Usa angoli arrotondati
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(MaterialTheme.shapes.medium)
                                 .clickable { showDialog = true }
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // User Info
                         Text(
                             text = user?.username ?: "Username non disponibile",
                             style = MaterialTheme.typography.titleMedium,
@@ -200,14 +206,13 @@ fun UserProfileScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Update Location Button
                         Button(
                             onClick = {
                                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                                     == PackageManager.PERMISSION_GRANTED
                                 ) {
                                     fetchLocation(context, userRepository, username) { newLocation ->
-                                        location = newLocation // Aggiorna la UI
+                                        location = newLocation
                                     }
                                 } else {
                                     locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -221,10 +226,8 @@ fun UserProfileScreen(
                     }
                 }
 
-
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Grafico delle categorie di manga
                 GraficoCategorieManga(
                     mangaRepository = mangaRepository,
                     username = username
@@ -240,6 +243,44 @@ fun UserProfileScreen(
             onDismiss = { showDialog = false }
         )
     }
+}
+
+@Composable
+fun showImageSelectionDialog(
+    pickImageLauncher: ActivityResultLauncher<String>,
+    takePictureLauncher: ActivityResultLauncher<Void?>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text("Seleziona immagine profilo")
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Scegli un'opzione per aggiornare l'immagine del profilo:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                takePictureLauncher.launch(null)
+                onDismiss()
+            }) {
+                Text("Scatta una foto")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                pickImageLauncher.launch("image/*")
+                onDismiss()
+            }) {
+                Text("Scegli dalla galleria")
+            }
+        }
+    )
 }
 
 fun fetchLocation(
@@ -260,40 +301,11 @@ fun fetchLocation(
                 val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
 
                 userRepository.updateLocation(username, newLocation)
-                onLocationUpdated(newLocation) // Aggiorna la UI
+                onLocationUpdated(newLocation)
                 Toast.makeText(context, "Posizione aggiornata", Toast.LENGTH_SHORT).show()
             } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
         }
     } else {
         Toast.makeText(context, "Permesso posizione non disponibile", Toast.LENGTH_SHORT).show()
     }
-}
-
-@Composable
-fun showImageSelectionDialog(
-    pickImageLauncher: ActivityResultLauncher<String>,
-    takePictureLauncher: ActivityResultLauncher<Void?>,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text("Seleziona Immagine") },
-        text = { Text("Scegli un'opzione per aggiornare l'immagine del profilo.") },
-        confirmButton = {
-            Button(onClick = {
-                pickImageLauncher.launch("image/*")
-                onDismiss()
-            }) {
-                Text("Scegli dalla Galleria")
-            }
-        },
-        dismissButton = {
-            Button(onClick = {
-                takePictureLauncher.launch(null)
-                onDismiss()
-            }) {
-                Text("Scatta una Foto")
-            }
-        }
-    )
 }
