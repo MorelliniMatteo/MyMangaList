@@ -65,6 +65,9 @@ fun DetailsMangaScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Spazio tra la top bar e il contenuto
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Card per il contenuto del Manga
             Card(
                 modifier = Modifier

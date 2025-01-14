@@ -12,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +57,7 @@ fun AddScreen(
     var isSaving by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
+    var showLocationDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -70,9 +73,7 @@ fun AddScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            fetchLocation(context) { newLocation ->
-                purchaseLocation = newLocation
-            }
+            showLocationDialog = true
         } else {
             Toast.makeText(context, "Permesso posizione negato", Toast.LENGTH_SHORT).show()
         }
@@ -137,7 +138,8 @@ fun AddScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -245,9 +247,7 @@ fun AddScreen(
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                             == PermissionChecker.PERMISSION_GRANTED
                         ) {
-                            fetchLocation(context) { newLocation ->
-                                purchaseLocation = newLocation
-                            }
+                            showLocationDialog = true
                         } else if (!hasShownLocationRequest) {
                             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                             hasShownLocationRequest = true
@@ -315,6 +315,38 @@ fun AddScreen(
             onDismiss = { showDialog = false }
         )
     }
+
+    if (showLocationDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationDialog = false },
+            title = { Text("Seleziona metodo di salvataggio posizione") },
+            text = {
+                Column {
+                    Text("Come vuoi salvare la posizione?")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    fetchLocation(context) { newLocation ->
+                        purchaseLocation = newLocation
+                        showLocationDialog = false
+                    }
+                }) {
+                    Text("Salva come Città")
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    fetchCoordinates(context) { newCoordinates ->
+                        purchaseLocation = newCoordinates
+                        showLocationDialog = false
+                    }
+                }) {
+                    Text("Salva come Coordinate")
+                }
+            }
+        )
+    }
 }
 
 private fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
@@ -342,13 +374,31 @@ private fun fetchLocation(
             location?.let {
                 val geocoder = Geocoder(context, Locale.getDefault())
                 val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-                val city = addresses?.firstOrNull()?.locality ?: "Unknown"
-                val newLocation = "$city (Lat: ${it.latitude}, Lon: ${it.longitude})"
-                onLocationUpdated(newLocation)
-                Toast.makeText(context, "Posizione inserita", Toast.LENGTH_SHORT).show()
-            } ?: Toast.makeText(context, "Unable to get location", Toast.LENGTH_SHORT).show()
+                val city = addresses?.firstOrNull()?.locality ?: "Città sconosciuta"
+                onLocationUpdated(city)
+                Toast.makeText(context, "Posizione aggiornata: $city", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(context, "Impossibile ottenere la posizione", Toast.LENGTH_SHORT).show()
         }
     } catch (e: SecurityException) {
-        Toast.makeText(context, "Permission to access location was denied", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Permesso negato per accedere alla posizione", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun fetchCoordinates(
+    context: Context,
+    onCoordinatesUpdated: (String) -> Unit
+) {
+    val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+
+    try {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                val coordinates = "Lat: ${it.latitude}, Lon: ${it.longitude}"
+                onCoordinatesUpdated(coordinates)
+                Toast.makeText(context, "Coordinate aggiornate: $coordinates", Toast.LENGTH_SHORT).show()
+            } ?: Toast.makeText(context, "Impossibile ottenere le coordinate", Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: SecurityException) {
+        Toast.makeText(context, "Permesso negato per accedere alla posizione", Toast.LENGTH_SHORT).show()
     }
 }

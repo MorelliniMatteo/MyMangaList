@@ -28,6 +28,7 @@ fun MangaCard(
     var isStarred by remember(manga.id) {
         mutableStateOf(manga.favourite)
     }
+    var showDeleteConfirmation by remember { mutableStateOf(false) } // Stato per mostrare il popup
 
     Card(
         modifier = modifier
@@ -95,7 +96,9 @@ fun MangaCard(
                                 contentDescription = "Delete",
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .clickable { onDeleteClick(manga) },
+                                    .clickable {
+                                        showDeleteConfirmation = true // Mostra il popup
+                                    },
                                 tint = Color.Red
                             )
                         }
@@ -103,5 +106,33 @@ fun MangaCard(
                 }
             }
         }
+    }
+
+    // Popup di conferma eliminazione
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = {
+                Text(text = "Conferma Eliminazione")
+            },
+            text = {
+                Text("Sei sicuro di voler eliminare definitivamente questo manga?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirmation = false
+                    onDeleteClick(manga) // Elimina il manga
+                }) {
+                    Text("Sì", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteConfirmation = false // Chiudi il popup senza eliminare
+                }) {
+                    Text("Annulla")
+                }
+            }
+        )
     }
 }

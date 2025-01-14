@@ -43,6 +43,7 @@ import android.graphics.RectF
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.remember
+import androidx.core.app.ActivityCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,14 +61,12 @@ fun UserProfileScreen(
     var showDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    var totalMangaCount by remember { mutableStateOf(0) }
-    var userMangaCount by remember { mutableStateOf(0) }
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
             uri?.let {
-                // Crea una copia permanente dell'immagine nella directory dell'app
                 val permanentUri = copyImageToAppStorage(context, it)
                 profilePictureUri = permanentUri
                 coroutineScope.launch {
@@ -215,17 +214,48 @@ fun UserProfileScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
-                            onClick = { /* Implementa aggiornamento posizione */ },
+                            onClick = {
+                                if (ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    fusedLocationClient.lastLocation.addOnSuccessListener { loc: Location? ->
+                                        loc?.let {
+                                            val geocoder = Geocoder(context, Locale.getDefault())
+                                            val address = geocoder.getFromLocation(
+                                                loc.latitude,
+                                                loc.longitude,
+                                                1
+                                            )?.firstOrNull()?.locality ?: "Città sconosciuta"
+                                            location = address
+                                            coroutineScope.launch {
+                                                userRepository.updateLocation(username, address)
+                                            }
+                                        } ?: run {
+                                            Toast.makeText(
+                                                context,
+                                                "Impossibile ottenere la posizione",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                } else {
+                                    ActivityCompat.requestPermissions(
+                                        context as android.app.Activity,
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                                        1
+                                    )
+                                }
+                            },
                             shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Aggiorna Posizione")
                         }
 
-
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Grafico delle categorie di manga
