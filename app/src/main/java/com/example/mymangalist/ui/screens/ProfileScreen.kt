@@ -34,7 +34,6 @@ import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.ui.components.MyMangaBottomBar
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
-import com.example.mymangalist.utils.saveBitmapAsUri
 import java.io.File
 import java.util.Locale
 import android.graphics.Color
@@ -44,6 +43,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
+import saveBitmapAsUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

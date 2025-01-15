@@ -32,10 +32,10 @@ import com.example.mymangalist.Manga
 import com.example.mymangalist.R
 import com.example.mymangalist.data.MangaRepository
 import com.example.mymangalist.ui.components.MyMangaBottomBar
-import com.example.mymangalist.utils.saveBitmapAsUri
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
+import saveBitmapAsUri
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,7 +87,11 @@ fun AddScreen(
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
-            uri?.let { profilePictureUri = it.toString() }
+            uri?.let {
+                // Copia l'immagine nella directory dell'app
+                val permanentUri = copyImageToAppStorage(context, it)
+                profilePictureUri = permanentUri?.toString()
+            }
         }
     )
 
@@ -96,7 +100,7 @@ fun AddScreen(
         onResult = { bitmap ->
             bitmap?.let {
                 val savedUri = saveBitmapAsUri(context, it)
-                profilePictureUri = savedUri.toString()
+                profilePictureUri = savedUri?.toString()
             }
         }
     )
