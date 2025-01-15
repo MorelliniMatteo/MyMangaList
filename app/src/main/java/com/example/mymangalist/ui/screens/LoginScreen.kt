@@ -210,7 +210,18 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
                                 requestNotificationPermission {
                                     if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                                         != PackageManager.PERMISSION_GRANTED && !hasShownLocationRequest) {
-                                        // ... resto del codice per i permessi di localizzazione
+                                        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        sharedPrefs.edit().putBoolean("location_permission_requested", true).apply()
+                                        hasShownLocationRequest = true
+                                    } else if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                                        == PackageManager.PERMISSION_GRANTED) {
+                                        fusedLocationClient.lastLocation.addOnCompleteListener { task ->
+                                            location = if (task.isSuccessful && task.result != null) task.result else null
+                                            sendLoginNotification(username, location)
+                                        }
+                                    } else {
+                                        // Invia la notifica anche senza la posizione
+                                        sendLoginNotification(username, null)
                                     }
                                 }
                                 navController.navigate("home/${username}") {
