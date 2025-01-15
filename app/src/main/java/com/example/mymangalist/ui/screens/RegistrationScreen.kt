@@ -31,11 +31,12 @@ import com.example.mymangalist.data.UserRepositoryInterface
 import com.example.mymangalist.R
 import com.example.mymangalist.User
 import android.content.Context.MODE_PRIVATE
+import org.mindrot.jbcrypt.BCrypt
 
 @Composable
 fun RegistrationScreen(navController: NavController, userRepository: UserRepositoryInterface) {
     val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", MODE_PRIVATE) }
+    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE) }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -63,7 +64,6 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
             Toast.makeText(context, "Permesso notifiche negato", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -116,14 +116,14 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
                             if (isTaken) {
                                 Toast.makeText(context, "Email già in uso", Toast.LENGTH_SHORT).show()
                             } else {
+                                // Passa la password non criptata al repository
                                 val newUser = User(username, email, password)
                                 userRepository.registerUser(newUser)
                                 Toast.makeText(context, "Registrazione avvenuta con successo", Toast.LENGTH_SHORT).show()
 
-                                // Richiesta del permesso e invio della notifica *solo se il permesso è concesso*
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     if (!hasNotificationPermission && !hasShownNotificationRequest) {
-                                        if(ActivityCompat.shouldShowRequestPermissionRationale(context as ComponentActivity, Manifest.permission.POST_NOTIFICATIONS)){
+                                        if (ActivityCompat.shouldShowRequestPermissionRationale(context as ComponentActivity, Manifest.permission.POST_NOTIFICATIONS)) {
                                             Toast.makeText(context, "Permesso notifiche necessario", Toast.LENGTH_SHORT).show()
                                         }
                                         requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -217,7 +217,7 @@ fun RegistrationScreen(navController: NavController, userRepository: UserReposit
             color = Color.Blue,
             modifier = Modifier
                 .clickable {
-                    navController.navigate("login") // Naviga alla schermata di login
+                    navController.navigate("login")
                 }
         )
     }

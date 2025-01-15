@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.mymangalist.User
 import com.example.mymangalist.Manga
 
-@Database(entities = [User::class, Manga::class], version = 1, exportSchema = false)
+@Database(entities = [User::class, Manga::class], version = 10, exportSchema = false)
 abstract class UserDatabase : RoomDatabase() {
 
     abstract fun userDAO(): UserDAO

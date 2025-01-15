@@ -1,5 +1,6 @@
 package com.example.mymangalist
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Index
@@ -10,9 +11,10 @@ import androidx.room.Index
     indices = [Index(value = ["email"], unique = true)]
 )
 data class User(
-    val username: String, // PrimaryKey univoca
+    val username: String,
     val email: String,
+    @ColumnInfo(name = "password", typeAffinity = ColumnInfo.TEXT)
     val password: String,
-    val profilePictureUri: String? = null, // Uri della foto profilo
-    val location: String? = null           // Posizione dell'utente
+    val profilePictureUri: String? = null,
+    val location: String? = null
 )

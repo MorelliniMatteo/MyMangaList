@@ -114,4 +114,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.0.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Password Criptata
+    implementation("org.mindrot:jbcrypt:0.4")
+
 }

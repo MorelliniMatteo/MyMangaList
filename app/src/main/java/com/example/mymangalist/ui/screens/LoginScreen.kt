@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.location.Geocoder
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,7 +46,7 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val scope = rememberCoroutineScope()
-    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", MODE_PRIVATE) } // memorizza sharedprefs
+    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", MODE_PRIVATE) }
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -137,7 +138,6 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
         }
     }
 
-
     fun sendLoginNotification(username: String, location: Location?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!hasNotificationPermission) {
@@ -187,28 +187,30 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
             return
         }
 
-        userRepository.loginUser(username, password, object : UserRepositoryInterface.Callback<LoginResult> {
+        val trimmedPassword = password.trim()
+
+        // Log prima dell'invio al repository
+        Log.d("LoginScreen", "Debug - Tentativo di login con username: $username")
+        Log.d("LoginScreen", "Debug - Password inserita (originale): $password")
+        Log.d("LoginScreen", "Debug - Password inserita (dopo trim): $trimmedPassword")
+        Log.d("LoginScreen", "Debug - Lunghezza password: ${trimmedPassword.length}")
+
+        userRepository.loginUser(username, trimmedPassword, object : UserRepositoryInterface.Callback<LoginResult> {
             override fun onResult(result: LoginResult) {
                 scope.launch {
                     withContext(Dispatchers.Main) {
                         when (result) {
                             is LoginResult.Success -> {
+                                Log.d("LoginScreen", "Debug - Login riuscito")
+                                Log.d("LoginScreen", "Debug - Password hashata nel DB: ${result.user.password}")
+                                Log.d("LoginScreen", "Debug - Lunghezza hash nel DB: ${result.user.password.length}")
+                                Log.d("LoginScreen", "Debug - Hash inizia con \$2a\$: ${result.user.password.startsWith("\$2a\$")}")
+
                                 Toast.makeText(context, "Login riuscito", Toast.LENGTH_SHORT).show()
                                 requestNotificationPermission {
                                     if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                                         != PackageManager.PERMISSION_GRANTED && !hasShownLocationRequest) {
-                                        if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity,
-                                                Manifest.permission.ACCESS_FINE_LOCATION)) {
-                                            Toast.makeText(context, "Posizione necessaria", Toast.LENGTH_SHORT).show()
-                                        }
-                                        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                                        sharedPrefs.edit().putBoolean("location_permission_requested", true).apply()
-                                        hasShownLocationRequest = true
-                                    } else {
-                                        fusedLocationClient.lastLocation.addOnCompleteListener { task ->
-                                            location = if (task.isSuccessful && task.result != null) task.result else null
-                                            sendLoginNotification(username, location)
-                                        }
+                                        // ... resto del codice per i permessi di localizzazione
                                     }
                                 }
                                 navController.navigate("home/${username}") {
@@ -216,12 +218,15 @@ fun LoginScreen(navController: NavController, userRepository: UserRepositoryInte
                                 }
                             }
                             is LoginResult.InvalidCredentials -> {
+                                Log.d("LoginScreen", "Debug - Credenziali non valide")
                                 loginError = "Credenziali errate"
                             }
                             is LoginResult.UserNotFound -> {
+                                Log.d("LoginScreen", "Debug - Utente non trovato nel database")
                                 loginError = "Utente non trovato"
                             }
                             is LoginResult.Failure -> {
+                                Log.e("LoginScreen", "Debug - Errore durante il login: ${result.errorMessage}")
                                 loginError = result.errorMessage
                             }
                         }
